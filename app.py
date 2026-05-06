@@ -11,7 +11,7 @@ st.set_page_config(page_title="QMS Smart Repository", page_icon="📑", layout="
 # Secure API Connection
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
 except KeyError:
     st.error("⚠️ System offline: API Key missing from cloud secrets. Please add it in Streamlit Cloud settings.")
     st.stop()
