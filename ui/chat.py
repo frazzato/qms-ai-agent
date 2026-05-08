@@ -1,0 +1,22 @@
+import streamlit as st
+from services.ai_service import ask_gemini
+
+def render_chat():
+    st.subheader("QMS Assistant")
+    st.write("Ask questions about procedures, AS9100 clauses, or request audit checklists.")
+
+    user_query = st.chat_input("E.g., What is the standard procedure for controlling nonconforming outputs?")
+
+    if user_query:
+        st.chat_message("user").write(user_query)
+
+        prompt = f"""
+        You are an elite AS9100 and ISO 9001 QMS Auditor.
+        Answer the following user query strictly using standard quality management principles.
+        User Query: {user_query}
+        """
+
+        with st.spinner("Analyzing compliance standards..."):
+            answer = ask_gemini(prompt)
+
+        st.chat_message("assistant").write(answer)
