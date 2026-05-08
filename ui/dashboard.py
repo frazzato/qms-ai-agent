@@ -130,8 +130,3 @@ def render_dashboard(doc_data):
 
     df = pd.DataFrame(doc_data)
     st.dataframe(df, use_container_width=True, hide_index=True)
-
-
-
-
-    
