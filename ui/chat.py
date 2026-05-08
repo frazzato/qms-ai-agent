@@ -1,5 +1,5 @@
 import streamlit as st
-from services.ai_service import ask_gemini
+from services.ai_service import ask_groq
 
 def render_chat():
     st.subheader("QMS Assistant")
@@ -17,6 +17,6 @@ def render_chat():
         """
 
         with st.spinner("Analyzing compliance standards..."):
-            answer = ask_gemini(prompt)
+           response = ask_groq(user_input)
 
         st.chat_message("assistant").write(answer)
