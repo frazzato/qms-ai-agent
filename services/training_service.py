@@ -1,4 +1,4 @@
-from services.ai_service import ask_gemini_json
+from services.ai_service import ask_groq_json
 
 def generate_training_module(filename: str):
     prompt = f"""
@@ -12,4 +12,5 @@ def generate_training_module(filename: str):
     "options": ["A", "B", "C", "D"],
     "answer": "..."
     """
-    return ask_gemini_json(prompt)
+    return ask_groq_json(prompt)
+
