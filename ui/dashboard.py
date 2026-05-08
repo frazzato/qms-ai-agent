@@ -10,7 +10,6 @@ def render_dashboard(doc_data):
     # -----------------------------
     st.subheader("System Overview")
 
-    # Fake health score (you can replace with real logic)
     health_score = random.randint(82, 99)
 
     st.progress(health_score / 100)
@@ -130,3 +129,5 @@ def render_dashboard(doc_data):
     df = pd.DataFrame(doc_data)
     st.dataframe(df, use_container_width=True, hide_index=True)
 
+
+    
