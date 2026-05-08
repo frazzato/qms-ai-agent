@@ -49,19 +49,19 @@ def render_dashboard(doc_data):
         st.markdown('<div class="pillar-card audit">🕵️ Audit Engine</div>', unsafe_allow_html=True)
         if st.button("Go to Audit", key="audit_btn", use_container_width=True):
             st.session_state.active_tab = "Audit"
-            st.experimental_rerun()
+            st.rerun()  # FIXED HERE
 
     with col2:
         st.markdown('<div class="pillar-card train">🎓 Training Module</div>', unsafe_allow_html=True)
         if st.button("Go to Training", key="train_btn", use_container_width=True):
             st.session_state.active_tab = "Training"
-            st.experimental_rerun()
+            st.rerun()  # FIXED HERE
 
     with col3:
         st.markdown('<div class="pillar-card master">📑 Master List</div>', unsafe_allow_html=True)
         if st.button("Stay on Dashboard", key="master_btn", use_container_width=True):
             st.session_state.active_tab = "Dashboard"
-            st.experimental_rerun()
+            st.rerun()  # FIXED HERE
 
     st.divider()
 
@@ -84,19 +84,19 @@ def render_dashboard(doc_data):
         st.markdown("""
         ```
         ┌──────────────────────────┐
-        │       Audit Engine       │
-        │ - Clause Mapping         │
-        │ - Nonconformity Checks   │
+        │        Audit Engine       │
+        │ - Clause Mapping          │
+        │ - Nonconformity Checks    │
         └─────────────┬────────────┘
                       │
         ┌─────────────▼────────────┐
-        │     Training Module       │
+        │      Training Module      │
         │ - Summaries               │
         │ - Knowledge Checks        │
         └─────────────┬────────────┘
                       │
         ┌─────────────▼────────────┐
-        │     Master List (Docs)    │
+        │      Master List (Docs)   │
         │ - GitHub Sync             │
         │ - Metadata Extraction     │
         └──────────────────────────┘
