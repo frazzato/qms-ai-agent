@@ -17,6 +17,7 @@ def render_chat():
         """
 
         with st.spinner("Analyzing compliance standards..."):
-           response = ask_groq(user_input)
+            response = ask_groq(prompt)
 
-        st.chat_message("assistant").write(answer)
+        st.chat_message("assistant").write(response)
+
