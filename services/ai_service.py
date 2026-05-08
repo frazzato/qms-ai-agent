@@ -1,5 +1,6 @@
 from groq import Groq
 from config.settings import GROQ_API_KEY
+import json
 
 client = Groq(api_key=GROQ_API_KEY)
 
@@ -9,7 +10,7 @@ def ask_groq(prompt: str) -> str:
         model="llama3-8b-8192",
         messages=[{"role": "user", "content": prompt}]
     )
-    return response.choices[0].message["content"]
+    return response.choices[0].message.content
 
 def ask_groq_json(prompt: str) -> dict:
     """Return JSON response from Groq Llama 3."""
@@ -17,5 +18,4 @@ def ask_groq_json(prompt: str) -> dict:
         model="llama3-8b-8192",
         messages=[{"role": "user", "content": prompt}]
     )
-    import json
-    return json.loads(response.choices[0].message["content"])
+    return json.loads(response.choices[0].message.content)
