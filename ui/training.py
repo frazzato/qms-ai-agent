@@ -32,7 +32,10 @@ def render_training(files):
         if st.button("Submit Answer"):
             if user_answer is None:
                 st.info("Please select an answer first.")
-            elif user_answer == data["answer"]:
-                st.success(f"**Correct!** {user_answer}")
-            else:
-                st.error(f"**Incorrect.** The correct answer was: {data['answer']}")
+            selected_letter = data["options"].index(user_answer)
+correct_letter = ["A", "B", "C", "D"][selected_letter]
+
+if correct_letter == data["answer"]:
+    st.success(f"**Correct!** {correct_letter}")
+else:
+    st.error(f"**Incorrect.** The correct answer was: {data['answer']}")
