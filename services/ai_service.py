@@ -1,22 +1,21 @@
-import google.generativeai as genai
-from config.settings import API_KEY, GEMINI_MODEL
+from groq import Groq
+from config.settings import GROQ_API_KEY
 
-# Configure the API key
-genai.configure(api_key=API_KEY)
+client = Groq(api_key=GROQ_API_KEY)
 
-# Initialize the model (no safety settings — required for new SDK)
-model = genai.GenerativeModel(
-    model_name=GEMINI_MODEL
-)
+def ask_groq(prompt: str) -> str:
+    """Return plain text response from Groq Llama 3."""
+    response = client.chat.completions.create(
+        model="llama3-8b-8192",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return response.choices[0].message["content"]
 
-def ask_gemini(prompt: str) -> str:
-    """Return plain text response from Gemini."""
-    response = model.generate_content([prompt])
-    return response.text
-
-def ask_gemini_json(prompt: str) -> dict:
-    """Return JSON response from Gemini."""
-    response = model.generate_content([prompt])
-    text = response.text.strip().replace("```json", "").replace("```", "")
+def ask_groq_json(prompt: str) -> dict:
+    """Return JSON response from Groq Llama 3."""
+    response = client.chat.completions.create(
+        model="llama3-8b-8192",
+        messages=[{"role": "user", "content": prompt}]
+    )
     import json
-    return json.loads(text)
+    return json.loads(response.choices[0].message["content"])
