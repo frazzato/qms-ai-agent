@@ -19,7 +19,6 @@ doc_data, available_files = scan_documents()
 if "active_tab" not in st.session_state:
     st.session_state.active_tab = "Dashboard"
 
-# Sidebar navigation
 tab = st.sidebar.radio(
     "Navigation",
     ["Dashboard", "Audit", "Training"],
@@ -33,9 +32,7 @@ if tab == "Dashboard":
     render_dashboard(doc_data)
 
 elif tab == "Audit":
-    render_chat()   # Your audit engine lives in the chat module
+    render_chat()
 
 elif tab == "Training":
     render_training(available_files)
-
-
