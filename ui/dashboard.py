@@ -21,17 +21,11 @@ def render_dashboard(doc_data):
     st.divider()
 
     # -----------------------------
-    # PILLAR CARDS WITH HOVER + CLICK
+    # CLICKABLE CARDS (3 ONLY)
     # -----------------------------
     st.markdown("""
     <style>
-        .pillars {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 25px;
-        }
         .pillar-card {
-            flex: 1;
             padding: 20px;
             border-radius: 12px;
             color: white;
@@ -45,19 +39,30 @@ def render_dashboard(doc_data):
             transform: translateY(-4px);
             box-shadow: 0px 4px 12px rgba(0,0,0,0.25);
         }
-        .ai     { background: #4A90E2; }
         .audit  { background: #50C878; }
         .train  { background: #F5A623; }
         .master { background: #9B59B6; }
     </style>
-
-    <div class="pillars">
-        <div class="pillar-card ai"     onclick="window.location.href='/?tab=ai'">🤖 AI Layer</div>
-        <div class="pillar-card audit"  onclick="window.location.href='/?tab=audit'">🕵️ Audit Engine</div>
-        <div class="pillar-card train"  onclick="window.location.href='/?tab=train'">🎓 Training Module</div>
-        <div class="pillar-card master" onclick="window.location.href='/?tab=master'">📑 Master List</div>
-    </div>
     """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("🕵️ Audit Engine", use_container_width=True):
+            st.session_state.active_tab = "Audit"
+            st.experimental_rerun()
+
+    with col2:
+        if st.button("🎓 Training Module", use_container_width=True):
+            st.session_state.active_tab = "Training"
+            st.experimental_rerun()
+
+    with col3:
+        if st.button("📑 Master List", use_container_width=True):
+            st.session_state.active_tab = "Dashboard"
+            st.experimental_rerun()
+
+    st.divider()
 
     # -----------------------------
     # STATUS INDICATORS
@@ -65,9 +70,9 @@ def render_dashboard(doc_data):
     st.markdown("### 🔵 Status Indicators")
 
     colA, colB, colC = st.columns(3)
-    colA.metric("AI Layer", "Operational", "🟢")
-    colB.metric("Audit Engine", "Ready", "🟢")
-    colC.metric("Training Module", "Stable", "🟢")
+    colA.metric("Audit Engine", "Ready", "🟢")
+    colB.metric("Training Module", "Stable", "🟢")
+    colC.metric("Master List", "Synced", "🟢")
 
     st.divider()
 
@@ -78,15 +83,9 @@ def render_dashboard(doc_data):
         st.markdown("""
         ```
         ┌──────────────────────────┐
-        │        AI Layer          │
-        │  - Groq Llama 3 Engine   │
-        │  - JSON Training Builder │
-        └─────────────┬────────────┘
-                      │
-        ┌─────────────▼────────────┐
-        │       Audit Engine        │
-        │ - Clause Mapping          │
-        │ - Nonconformity Checks    │
+        │       Audit Engine       │
+        │ - Clause Mapping         │
+        │ - Nonconformity Checks   │
         └─────────────┬────────────┘
                       │
         ┌─────────────▼────────────┐
@@ -130,3 +129,4 @@ def render_dashboard(doc_data):
 
     df = pd.DataFrame(doc_data)
     st.dataframe(df, use_container_width=True, hide_index=True)
+
