@@ -2,103 +2,218 @@ import streamlit as st
 import pandas as pd
 import time
 import random
-import datetime
 
 def render_dashboard(doc_data):
 
     # ─────────────────────────────────────
-    # KPI ROW — now uses real Status field
-    # ─────────────────────────────────────
-    total   = len(doc_data) if doc_data else 0
-    active  = sum(1 for d in doc_data if d.get("Status") == "Active")       if doc_data else 0
-    soon    = sum(1 for d in doc_data if d.get("Status") == "Review Soon")  if doc_data else 0
-    overdue = sum(1 for d in doc_data if d.get("Status") == "Overdue")      if doc_data else 0
-
-    k1, k2, k3, k4 = st.columns(4)
-    for col, (val, label, icon, color) in zip(
-        [k1, k2, k3, k4],
-        [
-            (total,   "Total Documents",  "📁", "#3b82f6"),
-            (active,  "Active",           "✅", "#22c55e"),
-            (soon,    "Review Soon",      "⏳", "#f59e0b"),
-            (overdue, "Overdue",          "⚠️",  "#ef4444"),
-        ],
-    ):
-        col.markdown(f"""
-        <div style="background:#fff; border:1px solid #e2e8f0;
-                    border-top:3px solid {color}; border-radius:12px;
-                    padding:1.2rem 1rem; text-align:center;
-                    box-shadow:0 1px 3px rgba(0,0,0,0.06);
-                    transition:transform 0.2s, box-shadow 0.2s;">
-            <div style="font-size:1.4rem;">{icon}</div>
-            <div style="font-size:1.8rem; font-weight:700; color:#0f172a;">{val}</div>
-            <div style="font-size:0.78rem; font-weight:500; color:#64748b;
-                        text-transform:uppercase; letter-spacing:0.05em;">{label}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
-
-    # ─────────────────────────────────────
-    # SYSTEM HEALTH BAR
-    # ─────────────────────────────────────
-    health_score = random.randint(82, 99)
-    st.markdown(f"""
-    <div style="background:linear-gradient(135deg,#0f172a,#1e293b);
-                border-radius:12px; padding:1rem 1.5rem; color:#e2e8f0;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <span style="font-size:0.78rem; font-weight:600; text-transform:uppercase;
-                             letter-spacing:0.05em; color:#94a3b8;">System Health</span>
-                <span style="font-size:1.3rem; font-weight:700; margin-left:0.8rem;
-                             color:{'#22c55e' if health_score >= 90 else '#f59e0b'};">
-                    {health_score}%
-                </span>
-            </div>
-            <div style="font-size:0.75rem; color:#64748b;">
-                Last AI Sync: {time.strftime('%Y-%m-%d %H:%M:%S')}
-            </div>
-        </div>
-        <div style="background:#334155; border-radius:6px; height:8px;
-                    overflow:hidden; margin-top:0.6rem;">
-            <div style="width:{health_score}%; height:100%;
-                        background:linear-gradient(90deg,#22c55e,#3b82f6);
-                        border-radius:6px;"></div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
-
-    # ─────────────────────────────────────
-    # QUICK ACCESS CARDS
+    # INJECT FUTURISTIC CSS
     # ─────────────────────────────────────
     st.markdown("""
-    <div style="font-size:1.05rem; font-weight:600; color:#0f172a;
-                border-bottom:2px solid #3b82f6; display:inline-block;
-                padding-bottom:0.3rem; margin-bottom:0.8rem;">
-        ⚡ Quick Access
+    <style>
+    /* ── Neon glow cards ── */
+    .neon-card {
+        background: linear-gradient(145deg, #0a0a1a, #111132);
+        border: 1px solid rgba(59,130,246,0.2);
+        border-radius: 16px;
+        padding: 1.4rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    .neon-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        border-radius: 16px 16px 0 0;
+    }
+    .neon-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(59,130,246,0.15);
+    }
+    .neon-blue::before    { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .neon-green::before   { background: linear-gradient(90deg, #22c55e, #4ade80); }
+    .neon-amber::before   { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .neon-red::before     { background: linear-gradient(90deg, #ef4444, #f87171); }
+    .neon-purple::before  { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+
+    .neon-icon  { font-size: 1.6rem; margin-bottom: 0.4rem; }
+    .neon-value { font-size: 2rem; font-weight: 800; color: #f1f5f9; margin: 0; }
+    .neon-label { font-size: 0.72rem; font-weight: 600; color: #64748b;
+                  text-transform: uppercase; letter-spacing: 0.08em; margin: 0; }
+
+    /* ── Glass panels ── */
+    .glass-panel {
+        background: linear-gradient(145deg,
+                    rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    /* ── Section title ── */
+    .section-glow {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #e2e8f0;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .section-glow .accent-bar {
+        display: inline-block;
+        width: 4px;
+        height: 1.2rem;
+        background: linear-gradient(180deg, #3b82f6, #8b5cf6);
+        border-radius: 4px;
+    }
+
+    /* ── Quick-access cards ── */
+    .access-card {
+        background: linear-gradient(145deg, #0f172a, #1a1a3e);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 14px;
+        padding: 1.3rem 1rem;
+        text-align: center;
+        transition: all 0.25s ease;
+        cursor: pointer;
+    }
+    .access-card:hover {
+        border-color: rgba(59,130,246,0.4);
+        box-shadow: 0 0 20px rgba(59,130,246,0.1);
+        transform: translateY(-2px);
+    }
+    .access-icon  { font-size: 2rem; margin-bottom: 0.4rem; }
+    .access-title { font-size: 0.95rem; font-weight: 700; color: #e2e8f0; }
+    .access-desc  { font-size: 0.78rem; color: #64748b; margin-top: 0.2rem; }
+
+    /* ── Status dots ── */
+    .status-row {
+        display: flex; align-items: center; gap: 0.6rem;
+        padding: 0.5rem 0;
+    }
+    .pulse-dot {
+        height: 10px; width: 10px; border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 8px #22c55e;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50%      { opacity: 0.5; }
+    }
+
+    /* ── Health bar ── */
+    .health-bar-track {
+        background: rgba(255,255,255,0.06);
+        border-radius: 8px;
+        height: 10px;
+        overflow: hidden;
+    }
+    .health-bar-fill {
+        height: 100%;
+        border-radius: 8px;
+        transition: width 1s ease;
+    }
+
+    /* ── Dark theme override for dataframe ── */
+    .stDataFrame {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ─────────────────────────────────────
+    # KPI CARDS
+    # ─────────────────────────────────────
+    total = len(doc_data) if doc_data else 0
+
+    # Safe status counting — works with any doc_data shape
+    def count_status(keyword):
+        if not doc_data:
+            return 0
+        return sum(1 for d in doc_data
+                   if keyword.lower() in str(d.get("Status", "")).lower())
+
+    active  = count_status("active")
+    soon    = count_status("review soon")
+    overdue = count_status("overdue")
+
+    k1, k2, k3, k4 = st.columns(4)
+    kpis = [
+        (k1, "📁", total,   "Total Docs",   "neon-blue"),
+        (k2, "✅", active,  "Active",        "neon-green"),
+        (k3, "⏳", soon,    "Review Soon",   "neon-amber"),
+        (k4, "⚠️", overdue, "Overdue",       "neon-red"),
+    ]
+    for col, icon, val, label, css in kpis:
+        with col:
+            st.markdown(f"""
+            <div class="neon-card {css}">
+                <div class="neon-icon">{icon}</div>
+                <p class="neon-value">{val}</p>
+                <p class="neon-label">{label}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("<div style='height:1.2rem'></div>", unsafe_allow_html=True)
+
+    # ─────────────────────────────────────
+    # SYSTEM HEALTH + SYNC BAR
+    # ─────────────────────────────────────
+    health = random.randint(85, 99)
+    bar_color = "#22c55e" if health >= 90 else "#f59e0b"
+
+    st.markdown(f"""
+    <div class="glass-panel">
+        <div style="display:flex; justify-content:space-between; align-items:center;
+                    margin-bottom:0.6rem;">
+            <div style="display:flex; align-items:center; gap:0.8rem;">
+                <span style="font-size:1.2rem;">🛡️</span>
+                <span style="font-size:0.85rem; font-weight:700; color:#e2e8f0;">
+                    SYSTEM HEALTH</span>
+                <span style="font-size:1.4rem; font-weight:800; color:{bar_color};">
+                    {health}%</span>
+            </div>
+            <span style="font-size:0.72rem; color:#475569;">
+                Last AI Sync: {time.strftime('%Y-%m-%d %H:%M:%S')}</span>
+        </div>
+        <div class="health-bar-track">
+            <div class="health-bar-fill"
+                 style="width:{health}%;
+                        background:linear-gradient(90deg,{bar_color},#3b82f6);">
+            </div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns(3)
-    cards = [
-        (col1, "🔍", "Audit Engine",    "Clause mapping & gap analysis",
-         "#3b82f6", "#eff6ff", "Audit",     "audit_btn"),
-        (col2, "🎓", "Training Module", "Summaries & knowledge checks",
-         "#f59e0b", "#fffbeb", "Training",  "train_btn"),
-        (col3, "📑", "Master List",     "Controlled document register",
-         "#8b5cf6", "#f5f3ff", "Dashboard", "master_btn"),
+    # ─────────────────────────────────────
+    # QUICK ACCESS
+    # ─────────────────────────────────────
+    st.markdown("""
+    <div class="section-glow">
+        <span class="accent-bar"></span> Quick Access
+    </div>
+    """, unsafe_allow_html=True)
+
+    c1, c2, c3 = st.columns(3)
+    nav_cards = [
+        (c1, "🔍", "Audit Engine",    "AI clause analysis & gaps",   "Audit",     "audit_btn"),
+        (c2, "🎓", "Training Hub",    "Smart learning modules",      "Training",  "train_btn"),
+        (c3, "📑", "Doc Register",    "Master document control",     "Dashboard", "master_btn"),
     ]
-    for col, icon, title, desc, accent, bg, target, key in cards:
+    for col, icon, title, desc, target, key in nav_cards:
         with col:
             st.markdown(f"""
-            <div style="background:{bg}; border:1px solid #e2e8f0;
-                        border-left:4px solid {accent}; border-radius:12px;
-                        padding:1.2rem 1rem; margin-bottom:0.5rem;">
-                <div style="font-size:1.5rem; margin-bottom:0.3rem;">{icon}</div>
-                <div style="font-size:1rem; font-weight:600; color:#0f172a;">{title}</div>
-                <div style="font-size:0.8rem; color:#64748b; margin-top:0.2rem;">{desc}</div>
+            <div class="access-card">
+                <div class="access-icon">{icon}</div>
+                <div class="access-title">{title}</div>
+                <div class="access-desc">{desc}</div>
             </div>
             """, unsafe_allow_html=True)
             if st.button(f"Open {title}", key=key, use_container_width=True):
@@ -108,41 +223,44 @@ def render_dashboard(doc_data):
     st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # ─────────────────────────────────────
-    # STATUS INDICATORS
+    # MODULE STATUS
     # ─────────────────────────────────────
     st.markdown("""
-    <div style="font-size:1.05rem; font-weight:600; color:#0f172a;
-                border-bottom:2px solid #3b82f6; display:inline-block;
-                padding-bottom:0.3rem; margin-bottom:0.8rem;">
-        🟢 Module Status
+    <div class="section-glow">
+        <span class="accent-bar"></span> Module Status
     </div>
     """, unsafe_allow_html=True)
 
-    s1, s2, s3 = st.columns(3)
-    for col, name, status in [(s1,"Audit Engine","Ready"),
-                               (s2,"Training Module","Stable"),
-                               (s3,"Master List","Synced")]:
-        with col:
-            st.markdown(f"""
-            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px;
-                        padding:0.9rem 1rem; display:flex; align-items:center; gap:0.7rem;
-                        box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-                <span style="height:10px; width:10px; background:#22c55e;
-                             border-radius:50%; display:inline-block;
-                             box-shadow:0 0 6px #22c55e;"></span>
-                <div>
-                    <div style="font-size:0.9rem; font-weight:600; color:#0f172a;">{name}</div>
-                    <div style="font-size:0.75rem; color:#64748b;">{status}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="glass-panel">
+        <div class="status-row">
+            <div class="pulse-dot"></div>
+            <span style="font-size:0.88rem; font-weight:600; color:#e2e8f0;">
+                Audit Engine</span>
+            <span style="font-size:0.75rem; color:#22c55e; margin-left:auto;">
+                Operational</span>
+        </div>
+        <div class="status-row">
+            <div class="pulse-dot"></div>
+            <span style="font-size:0.88rem; font-weight:600; color:#e2e8f0;">
+                Training Module</span>
+            <span style="font-size:0.75rem; color:#22c55e; margin-left:auto;">
+                Operational</span>
+        </div>
+        <div class="status-row">
+            <div class="pulse-dot"></div>
+            <span style="font-size:0.88rem; font-weight:600; color:#e2e8f0;">
+                Document Sync</span>
+            <span style="font-size:0.75rem; color:#22c55e; margin-left:auto;">
+                Synced · {total} docs</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # ─────────────────────────────────────
     # ARCHITECTURE DIAGRAM
     # ─────────────────────────────────────
-    with st.expander("📐 System Architecture Diagram"):
+    with st.expander("📐 System Architecture"):
         st.markdown("""
         ```
         ┌──────────────────────────┐
@@ -168,35 +286,31 @@ def render_dashboard(doc_data):
     st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # ─────────────────────────────────────
-    # DOCUMENT COVERAGE CHART
+    # COVERAGE CHART
     # ─────────────────────────────────────
     st.markdown("""
-    <div style="font-size:1.05rem; font-weight:600; color:#0f172a;
-                border-bottom:2px solid #3b82f6; display:inline-block;
-                padding-bottom:0.3rem; margin-bottom:0.8rem;">
-        📊 Document Coverage
+    <div class="section-glow">
+        <span class="accent-bar"></span> Document Coverage
     </div>
     """, unsafe_allow_html=True)
 
     if doc_data:
-        heatmap_data = pd.DataFrame({
-            "Document": [d["Document ID"] for d in doc_data],
-            "Coverage Score": [random.randint(70, 100) for _ in doc_data]
+        chart_df = pd.DataFrame({
+            "Document": [d.get("Document ID", f"Doc {i+1}") for i, d in enumerate(doc_data)],
+            "Coverage": [random.randint(70, 100) for _ in doc_data]
         })
-        st.bar_chart(heatmap_data.set_index("Document"))
+        st.bar_chart(chart_df.set_index("Document"))
     else:
         st.info("Upload documents to see coverage data.")
 
     st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # ─────────────────────────────────────
-    # CONTROLLED DOCUMENT REGISTER TABLE
+    # DOCUMENT REGISTER — USING st.dataframe (BULLETPROOF)
     # ─────────────────────────────────────
     st.markdown("""
-    <div style="font-size:1.05rem; font-weight:600; color:#0f172a;
-                border-bottom:2px solid #3b82f6; display:inline-block;
-                padding-bottom:0.3rem; margin-bottom:0.8rem;">
-        📑 Controlled Document Register
+    <div class="section-glow">
+        <span class="accent-bar"></span> Controlled Document Register
     </div>
     """, unsafe_allow_html=True)
 
@@ -204,98 +318,36 @@ def render_dashboard(doc_data):
         st.info("No documents found in **/docs** folder.")
         return
 
-    # ── Status styling map ──
-    STATUS_STYLE = {
-        "Active":      ("✅ Active",      "#dcfce7", "#166534"),
-        "Review Soon": ("⏳ Review Soon", "#fef9c3", "#854d0e"),
-        "Overdue":     ("⚠️ Overdue",     "#fee2e2", "#991b1b"),
-    }
+    df = pd.DataFrame(doc_data)
 
-    # ── Build header ──
-    display_cols = [
-        "Document ID", "Title", "Format", "Revision",
-        "Approved By", "Approval Date", "Next Review", "Status"
-    ]
+    # ✅ Style the dataframe — no HTML tables, no key mismatches
+    def style_status(val):
+        if "active" in str(val).lower():
+            return "background-color: #052e16; color: #4ade80; font-weight: 600;"
+        elif "review" in str(val).lower():
+            return "background-color: #422006; color: #fbbf24; font-weight: 600;"
+        elif "overdue" in str(val).lower():
+            return "background-color: #450a0a; color: #f87171; font-weight: 600;"
+        return ""
 
-    header_cells = ""
-    for col_name in display_cols:
-        header_cells += f"""
-        <th style="padding:0.75rem 1rem; text-align:left; font-size:0.75rem;
-                   font-weight:600; color:#64748b; text-transform:uppercase;
-                   letter-spacing:0.05em; white-space:nowrap;">{col_name}</th>"""
+    styled = df.style.applymap(
+        style_status,
+        subset=["Status"] if "Status" in df.columns else []
+    ).set_properties(**{
+        "font-size": "0.88rem",
+    }).set_table_styles([
+        {"selector": "th", "props": [
+            ("background-color", "#0f172a"),
+            ("color", "#94a3b8"),
+            ("font-size", "0.78rem"),
+            ("font-weight", "600"),
+            ("text-transform", "uppercase"),
+            ("letter-spacing", "0.05em"),
+            ("padding", "0.75rem"),
+        ]},
+        {"selector": "td", "props": [
+            ("padding", "0.7rem"),
+        ]},
+    ])
 
-    # ── Build rows ──
-    today = datetime.date.today()
-    body_rows = ""
-    for d in doc_data:
-        cells = ""
-        for col_name in display_cols:
-            val = d.get(col_name, "—")
-
-            if col_name == "Status":
-                label, bg, fg = STATUS_STYLE.get(
-                    val, ("❔ Unknown", "#f1f5f9", "#475569")
-                )
-                val = (f'<span style="background:{bg}; color:{fg}; '
-                       f'padding:0.2rem 0.65rem; border-radius:20px; '
-                       f'font-size:0.75rem; font-weight:600; '
-                       f'white-space:nowrap;">{label}</span>')
-
-            elif col_name == "Next Review":
-                # Color-code the review date
-                try:
-                    review_date = datetime.datetime.strptime(val, '%Y-%m-%d').date()
-                    days_left = (review_date - today).days
-                    if days_left < 0:
-                        date_color = "#ef4444"
-                        suffix = f" ({abs(days_left)}d overdue)"
-                    elif days_left <= 30:
-                        date_color = "#f59e0b"
-                        suffix = f" ({days_left}d left)"
-                    else:
-                        date_color = "#22c55e"
-                        suffix = ""
-                    val = (f'<span style="color:{date_color}; font-weight:600;">'
-                           f'{val}</span>'
-                           f'<span style="color:#94a3b8; font-size:0.75rem;">'
-                           f'{suffix}</span>')
-                except (ValueError, TypeError):
-                    pass
-
-            elif col_name == "Document ID":
-                val = f'<span style="font-weight:600; color:#3b82f6;">{val}</span>'
-
-            elif col_name == "Revision":
-                val = (f'<span style="background:#eff6ff; color:#1e40af; '
-                       f'padding:0.15rem 0.5rem; border-radius:6px; '
-                       f'font-size:0.78rem; font-weight:600;">{val}</span>')
-
-            if val is None or str(val).strip() == "":
-                val = "—"
-
-            cells += f"""
-            <td style="padding:0.7rem 1rem; font-size:0.88rem;
-                       color:#334155; white-space:nowrap;">{val}</td>"""
-
-        body_rows += f"""
-        <tr style="border-bottom:1px solid #f1f5f9;
-                   transition:background 0.15s;"
-            onmouseover="this.style.background='#f8fafc'"
-            onmouseout="this.style.background='transparent'">
-            {cells}
-        </tr>"""
-
-    st.markdown(f"""
-    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px;
-                overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04);
-                overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; min-width:900px;">
-            <thead>
-                <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
-                    {header_cells}
-                </tr>
-            </thead>
-            <tbody>{body_rows}</tbody>
-        </table>
-    </div>
-    """, unsafe_allow_html=True)
+    st.dataframe(styled, use_container_width=True, hide_index=True)
