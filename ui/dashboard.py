@@ -10,7 +10,6 @@ def render_dashboard(doc_data):
     # ─────────────────────────────────────
     st.markdown("""
     <style>
-    /* ── Neon glow cards ── */
     .neon-card {
         background: linear-gradient(145deg, #0a0a1a, #111132);
         border: 1px solid rgba(59,130,246,0.2);
@@ -36,14 +35,12 @@ def render_dashboard(doc_data):
     .neon-green::before   { background: linear-gradient(90deg, #22c55e, #4ade80); }
     .neon-amber::before   { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
     .neon-red::before     { background: linear-gradient(90deg, #ef4444, #f87171); }
-    .neon-purple::before  { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
 
     .neon-icon  { font-size: 1.6rem; margin-bottom: 0.4rem; }
     .neon-value { font-size: 2rem; font-weight: 800; color: #f1f5f9; margin: 0; }
     .neon-label { font-size: 0.72rem; font-weight: 600; color: #64748b;
                   text-transform: uppercase; letter-spacing: 0.08em; margin: 0; }
 
-    /* ── Glass panels ── */
     .glass-panel {
         background: linear-gradient(145deg,
                     rgba(255,255,255,0.03), rgba(255,255,255,0.01));
@@ -54,7 +51,6 @@ def render_dashboard(doc_data):
         margin-bottom: 1rem;
     }
 
-    /* ── Section title ── */
     .section-glow {
         font-size: 1.1rem;
         font-weight: 700;
@@ -72,7 +68,6 @@ def render_dashboard(doc_data):
         border-radius: 4px;
     }
 
-    /* ── Quick-access cards ── */
     .access-card {
         background: linear-gradient(145deg, #0f172a, #1a1a3e);
         border: 1px solid rgba(255,255,255,0.06);
@@ -91,7 +86,6 @@ def render_dashboard(doc_data):
     .access-title { font-size: 0.95rem; font-weight: 700; color: #e2e8f0; }
     .access-desc  { font-size: 0.78rem; color: #64748b; margin-top: 0.2rem; }
 
-    /* ── Status dots ── */
     .status-row {
         display: flex; align-items: center; gap: 0.6rem;
         padding: 0.5rem 0;
@@ -107,7 +101,6 @@ def render_dashboard(doc_data):
         50%      { opacity: 0.5; }
     }
 
-    /* ── Health bar ── */
     .health-bar-track {
         background: rgba(255,255,255,0.06);
         border-radius: 8px;
@@ -119,12 +112,6 @@ def render_dashboard(doc_data):
         border-radius: 8px;
         transition: width 1s ease;
     }
-
-    /* ── Dark theme override for dataframe ── */
-    .stDataFrame {
-        border-radius: 12px;
-        overflow: hidden;
-    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -133,7 +120,6 @@ def render_dashboard(doc_data):
     # ─────────────────────────────────────
     total = len(doc_data) if doc_data else 0
 
-    # Safe status counting — works with any doc_data shape
     def count_status(keyword):
         if not doc_data:
             return 0
@@ -164,7 +150,7 @@ def render_dashboard(doc_data):
     st.markdown("<div style='height:1.2rem'></div>", unsafe_allow_html=True)
 
     # ─────────────────────────────────────
-    # SYSTEM HEALTH + SYNC BAR
+    # SYSTEM HEALTH
     # ─────────────────────────────────────
     health = random.randint(85, 99)
     bar_color = "#22c55e" if health >= 90 else "#f59e0b"
@@ -203,9 +189,9 @@ def render_dashboard(doc_data):
 
     c1, c2, c3 = st.columns(3)
     nav_cards = [
-        (c1, "🔍", "Audit Engine",    "AI clause analysis & gaps",   "Audit",     "audit_btn"),
-        (c2, "🎓", "Training Hub",    "Smart learning modules",      "Training",  "train_btn"),
-        (c3, "📑", "Doc Register",    "Master document control",     "Dashboard", "master_btn"),
+        (c1, "🔍", "Audit Engine",  "AI clause analysis & gaps",  "Audit",     "audit_btn"),
+        (c2, "🎓", "Training Hub",  "Smart learning modules",     "Training",  "train_btn"),
+        (c3, "📑", "Doc Register",  "Master document control",    "Dashboard", "master_btn"),
     ]
     for col, icon, title, desc, target, key in nav_cards:
         with col:
@@ -257,56 +243,10 @@ def render_dashboard(doc_data):
     </div>
     """, unsafe_allow_html=True)
 
-    # ─────────────────────────────────────
-    # ARCHITECTURE DIAGRAM
-    # ─────────────────────────────────────
-    with st.expander("📐 System Architecture"):
-        st.markdown("""
-        ```
-        ┌──────────────────────────┐
-        │        Audit Engine       │
-        │ - Clause Mapping          │
-        │ - Nonconformity Checks    │
-        └─────────────┬────────────┘
-                      │
-        ┌─────────────▼────────────┐
-        │      Training Module      │
-        │ - Summaries               │
-        │ - Knowledge Checks        │
-        └─────────────┬────────────┘
-                      │
-        ┌─────────────▼────────────┐
-        │      Master List (Docs)   │
-        │ - GitHub Sync             │
-        │ - Metadata Extraction     │
-        └──────────────────────────┘
-        ```
-        """)
-
     st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # ─────────────────────────────────────
-    # COVERAGE CHART
-    # ─────────────────────────────────────
-    st.markdown("""
-    <div class="section-glow">
-        <span class="accent-bar"></span> Document Coverage
-    </div>
-    """, unsafe_allow_html=True)
-
-    if doc_data:
-        chart_df = pd.DataFrame({
-            "Document": [d.get("Document ID", f"Doc {i+1}") for i, d in enumerate(doc_data)],
-            "Coverage": [random.randint(70, 100) for _ in doc_data]
-        })
-        st.bar_chart(chart_df.set_index("Document"))
-    else:
-        st.info("Upload documents to see coverage data.")
-
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-
-    # ─────────────────────────────────────
-    # DOCUMENT REGISTER — USING st.dataframe (BULLETPROOF)
+    # DOCUMENT REGISTER — BULLETPROOF
     # ─────────────────────────────────────
     st.markdown("""
     <div class="section-glow">
@@ -320,34 +260,14 @@ def render_dashboard(doc_data):
 
     df = pd.DataFrame(doc_data)
 
-    # ✅ Style the dataframe — no HTML tables, no key mismatches
-    def style_status(val):
-        if "active" in str(val).lower():
-            return "background-color: #052e16; color: #4ade80; font-weight: 600;"
-        elif "review" in str(val).lower():
-            return "background-color: #422006; color: #fbbf24; font-weight: 600;"
-        elif "overdue" in str(val).lower():
-            return "background-color: #450a0a; color: #f87171; font-weight: 600;"
-        return ""
-
-    styled = df.style.applymap(
-        style_status,
-        subset=["Status"] if "Status" in df.columns else []
-    ).set_properties(**{
-        "font-size": "0.88rem",
-    }).set_table_styles([
-        {"selector": "th", "props": [
-            ("background-color", "#0f172a"),
-            ("color", "#94a3b8"),
-            ("font-size", "0.78rem"),
-            ("font-weight", "600"),
-            ("text-transform", "uppercase"),
-            ("letter-spacing", "0.05em"),
-            ("padding", "0.75rem"),
-        ]},
-        {"selector": "td", "props": [
-            ("padding", "0.7rem"),
-        ]},
-    ])
-
-    st.dataframe(styled, use_container_width=True, hide_index=True)
+    # ✅ Simple, compatible — works on ALL pandas versions
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Document ID": st.column_config.TextColumn("Document ID", width="medium"),
+            "Title":       st.column_config.TextColumn("Title", width="large"),
+            "Status":      st.column_config.TextColumn("Status", width="medium"),
+        },
+    )
