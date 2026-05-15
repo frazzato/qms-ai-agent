@@ -32,7 +32,7 @@ if tab == "Dashboard":
     render_dashboard(doc_data)
 
 elif tab == "Audit":
-    render_chat()
+    render_chat(available_files)       # ✅ CHANGED — was render_chat()
 
 elif tab == "Training":
     render_training(available_files)
