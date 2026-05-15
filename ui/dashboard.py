@@ -6,10 +6,120 @@ import random
 def render_dashboard(doc_data):
 
     # ─────────────────────────────────────
-    # INJECT FUTURISTIC CSS
+    # INJECT CSS
     # ─────────────────────────────────────
     st.markdown("""
     <style>
+    /* ── Hero Card ── */
+    .hero-card {
+        background: linear-gradient(145deg, #0a0f1e, #111832);
+        border: 1px solid rgba(59,130,246,0.15);
+        border-radius: 20px;
+        padding: 2.5rem 2rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-card::after {
+        content: '';
+        position: absolute;
+        top: -50%; right: -20%;
+        width: 400px; height: 400px;
+        background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(34,197,94,0.15);
+        border: 1px solid rgba(34,197,94,0.3);
+        color: #4ade80;
+        padding: 0.35rem 0.9rem;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 1.2rem;
+    }
+    .hero-title {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #f1f5f9;
+        line-height: 1.2;
+        margin-bottom: 0.8rem;
+    }
+    .hero-sub {
+        font-size: 0.9rem;
+        color: #64748b;
+        line-height: 1.6;
+        max-width: 500px;
+    }
+
+    /* ── AI Module Cards ── */
+    .ai-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.8rem;
+        margin-bottom: 1.5rem;
+    }
+    @media (max-width: 768px) {
+        .ai-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .ai-module {
+        background: linear-gradient(145deg, #0f172a, #151d35);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 16px;
+        padding: 1.4rem 1rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+    }
+    .ai-module:hover {
+        border-color: rgba(59,130,246,0.4);
+        box-shadow: 0 0 25px rgba(59,130,246,0.1);
+        transform: translateY(-3px);
+    }
+    .ai-module.featured {
+        background: linear-gradient(145deg, #1a1a3e, #1e2550);
+        border-color: rgba(59,130,246,0.3);
+        box-shadow: 0 4px 20px rgba(59,130,246,0.1);
+    }
+    .ai-module-icon {
+        width: 48px; height: 48px;
+        margin: 0 auto 0.7rem;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+    }
+    .ai-module-name {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #e2e8f0;
+        margin-bottom: 0.2rem;
+    }
+    .ai-module-desc {
+        font-size: 0.68rem;
+        color: #64748b;
+        line-height: 1.4;
+    }
+    .new-badge {
+        position: absolute;
+        top: 8px; right: 8px;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        color: white;
+        font-size: 0.6rem;
+        font-weight: 700;
+        padding: 0.15rem 0.45rem;
+        border-radius: 6px;
+        letter-spacing: 0.05em;
+    }
+
+    /* ── Neon KPI ── */
     .neon-card {
         background: linear-gradient(145deg, #0a0a1a, #111132);
         border: 1px solid rgba(59,130,246,0.2);
@@ -31,16 +141,17 @@ def render_dashboard(doc_data):
         transform: translateY(-3px);
         box-shadow: 0 8px 30px rgba(59,130,246,0.15);
     }
-    .neon-blue::before    { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
-    .neon-green::before   { background: linear-gradient(90deg, #22c55e, #4ade80); }
-    .neon-amber::before   { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-    .neon-red::before     { background: linear-gradient(90deg, #ef4444, #f87171); }
+    .neon-blue::before   { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .neon-green::before  { background: linear-gradient(90deg, #22c55e, #4ade80); }
+    .neon-amber::before  { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .neon-red::before    { background: linear-gradient(90deg, #ef4444, #f87171); }
 
     .neon-icon  { font-size: 1.6rem; margin-bottom: 0.4rem; }
     .neon-value { font-size: 2rem; font-weight: 800; color: #f1f5f9; margin: 0; }
     .neon-label { font-size: 0.72rem; font-weight: 600; color: #64748b;
                   text-transform: uppercase; letter-spacing: 0.08em; margin: 0; }
 
+    /* ── Glass panel ── */
     .glass-panel {
         background: linear-gradient(145deg,
                     rgba(255,255,255,0.03), rgba(255,255,255,0.01));
@@ -51,6 +162,7 @@ def render_dashboard(doc_data):
         margin-bottom: 1rem;
     }
 
+    /* ── Section header ── */
     .section-glow {
         font-size: 1.1rem;
         font-weight: 700;
@@ -62,30 +174,12 @@ def render_dashboard(doc_data):
     }
     .section-glow .accent-bar {
         display: inline-block;
-        width: 4px;
-        height: 1.2rem;
+        width: 4px; height: 1.2rem;
         background: linear-gradient(180deg, #3b82f6, #8b5cf6);
         border-radius: 4px;
     }
 
-    .access-card {
-        background: linear-gradient(145deg, #0f172a, #1a1a3e);
-        border: 1px solid rgba(255,255,255,0.06);
-        border-radius: 14px;
-        padding: 1.3rem 1rem;
-        text-align: center;
-        transition: all 0.25s ease;
-        cursor: pointer;
-    }
-    .access-card:hover {
-        border-color: rgba(59,130,246,0.4);
-        box-shadow: 0 0 20px rgba(59,130,246,0.1);
-        transform: translateY(-2px);
-    }
-    .access-icon  { font-size: 2rem; margin-bottom: 0.4rem; }
-    .access-title { font-size: 0.95rem; font-weight: 700; color: #e2e8f0; }
-    .access-desc  { font-size: 0.78rem; color: #64748b; margin-top: 0.2rem; }
-
+    /* ── Status ── */
     .status-row {
         display: flex; align-items: center; gap: 0.6rem;
         padding: 0.5rem 0;
@@ -101,24 +195,130 @@ def render_dashboard(doc_data):
         50%      { opacity: 0.5; }
     }
 
+    /* ── Health bar ── */
     .health-bar-track {
         background: rgba(255,255,255,0.06);
-        border-radius: 8px;
-        height: 10px;
-        overflow: hidden;
+        border-radius: 8px; height: 10px; overflow: hidden;
     }
     .health-bar-fill {
-        height: 100%;
-        border-radius: 8px;
+        height: 100%; border-radius: 8px;
         transition: width 1s ease;
     }
     </style>
     """, unsafe_allow_html=True)
 
     # ─────────────────────────────────────
-    # KPI CARDS
+    # HERO CARD
     # ─────────────────────────────────────
     total = len(doc_data) if doc_data else 0
+
+    st.markdown(f"""
+    <div class="hero-card">
+        <div class="hero-badge">
+            🤖 AI-POWERED QMS ACTIVE
+        </div>
+        <div class="hero-title">
+            AS9100 Rev D with<br>AI-Assisted Modules
+        </div>
+        <div class="hero-sub">
+            Your compliance engine is synchronized with
+            <strong style="color:#e2e8f0;">{total} controlled documents</strong>
+            in the QMS repository. AI modules are analyzing gaps,
+            generating CAPAs, and building audit checklists in real-time.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ─────────────────────────────────────
+    # AI MODULES SHOWCASE
+    # ─────────────────────────────────────
+    st.markdown("""
+    <div class="section-glow">
+        <span class="accent-bar"></span> AI Modules
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="ai-grid">
+
+        <div class="ai-module" onclick="void(0)">
+            <div class="ai-module-icon" style="background:rgba(59,130,246,0.12);">
+                📋
+            </div>
+            <div class="ai-module-name">Gap Analysis</div>
+            <div class="ai-module-desc">Clause coverage mapping against AS9100 & ISO 9001</div>
+        </div>
+
+        <div class="ai-module featured" onclick="void(0)">
+            <div class="new-badge">NEW</div>
+            <div class="ai-module-icon" style="background:rgba(239,68,68,0.12);">
+                🛠️
+            </div>
+            <div class="ai-module-name">CAPA Generator</div>
+            <div class="ai-module-desc">Root cause analysis & corrective action reports</div>
+        </div>
+
+        <div class="ai-module" onclick="void(0)">
+            <div class="ai-module-icon" style="background:rgba(34,197,94,0.12);">
+                ✅
+            </div>
+            <div class="ai-module-name">Audit Checklist</div>
+            <div class="ai-module-desc">Auto-generated internal audit checklists by clause</div>
+        </div>
+
+        <div class="ai-module" onclick="void(0)">
+            <div class="new-badge">NEW</div>
+            <div class="ai-module-icon" style="background:rgba(245,158,11,0.12);">
+                ⚠️
+            </div>
+            <div class="ai-module-name">Risk Assessment</div>
+            <div class="ai-module-desc">Likelihood × severity matrix with mitigations</div>
+        </div>
+
+        <div class="ai-module" onclick="void(0)">
+            <div class="ai-module-icon" style="background:rgba(139,92,246,0.12);">
+                🎓
+            </div>
+            <div class="ai-module-name">Smart Training</div>
+            <div class="ai-module-desc">AI-generated training modules with knowledge checks</div>
+        </div>
+
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Clickable buttons below the showcase ──
+    b1, b2, b3, b4, b5 = st.columns(5)
+    with b1:
+        if st.button("Open Gap Analysis", key="dash_gap", use_container_width=True):
+            st.session_state.active_tab = "Audit"
+            st.rerun()
+    with b2:
+        if st.button("Open CAPA", key="dash_capa", use_container_width=True):
+            st.session_state.active_tab = "Audit"
+            st.rerun()
+    with b3:
+        if st.button("Open Checklist", key="dash_check", use_container_width=True):
+            st.session_state.active_tab = "Audit"
+            st.rerun()
+    with b4:
+        if st.button("Open Risk", key="dash_risk", use_container_width=True):
+            st.session_state.active_tab = "Audit"
+            st.rerun()
+    with b5:
+        if st.button("Open Training", key="dash_train", use_container_width=True):
+            st.session_state.active_tab = "Training"
+            st.rerun()
+
+    st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
+
+    # ─────────────────────────────────────
+    # KPI CARDS
+    # ─────────────────────────────────────
+    st.markdown("""
+    <div class="section-glow">
+        <span class="accent-bar"></span> Document Control
+    </div>
+    """, unsafe_allow_html=True)
 
     def count_status(keyword):
         if not doc_data:
@@ -147,7 +347,7 @@ def render_dashboard(doc_data):
             </div>
             """, unsafe_allow_html=True)
 
-    st.markdown("<div style='height:1.2rem'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # ─────────────────────────────────────
     # SYSTEM HEALTH
@@ -178,34 +378,6 @@ def render_dashboard(doc_data):
     </div>
     """, unsafe_allow_html=True)
 
-    # ─────────────────────────────────────
-    # QUICK ACCESS
-    # ─────────────────────────────────────
-    st.markdown("""
-    <div class="section-glow">
-        <span class="accent-bar"></span> Quick Access
-    </div>
-    """, unsafe_allow_html=True)
-
-    c1, c2, c3 = st.columns(3)
-    nav_cards = [
-        (c1, "🔍", "Audit Engine",  "AI clause analysis & gaps",  "Audit",     "audit_btn"),
-        (c2, "🎓", "Training Hub",  "Smart learning modules",     "Training",  "train_btn"),
-        (c3, "📑", "Doc Register",  "Master document control",    "Dashboard", "master_btn"),
-    ]
-    for col, icon, title, desc, target, key in nav_cards:
-        with col:
-            st.markdown(f"""
-            <div class="access-card">
-                <div class="access-icon">{icon}</div>
-                <div class="access-title">{title}</div>
-                <div class="access-desc">{desc}</div>
-            </div>
-            """, unsafe_allow_html=True)
-            if st.button(f"Open {title}", key=key, use_container_width=True):
-                st.session_state.active_tab = target
-                st.rerun()
-
     st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # ─────────────────────────────────────
@@ -222,7 +394,28 @@ def render_dashboard(doc_data):
         <div class="status-row">
             <div class="pulse-dot"></div>
             <span style="font-size:0.88rem; font-weight:600; color:#e2e8f0;">
-                Audit Engine</span>
+                Gap Analysis Engine</span>
+            <span style="font-size:0.75rem; color:#22c55e; margin-left:auto;">
+                Operational</span>
+        </div>
+        <div class="status-row">
+            <div class="pulse-dot"></div>
+            <span style="font-size:0.88rem; font-weight:600; color:#e2e8f0;">
+                CAPA Generator</span>
+            <span style="font-size:0.75rem; color:#22c55e; margin-left:auto;">
+                Operational</span>
+        </div>
+        <div class="status-row">
+            <div class="pulse-dot"></div>
+            <span style="font-size:0.88rem; font-weight:600; color:#e2e8f0;">
+                Audit Checklist Builder</span>
+            <span style="font-size:0.75rem; color:#22c55e; margin-left:auto;">
+                Operational</span>
+        </div>
+        <div class="status-row">
+            <div class="pulse-dot"></div>
+            <span style="font-size:0.88rem; font-weight:600; color:#e2e8f0;">
+                Risk Assessment</span>
             <span style="font-size:0.75rem; color:#22c55e; margin-left:auto;">
                 Operational</span>
         </div>
@@ -246,7 +439,7 @@ def render_dashboard(doc_data):
     st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 
     # ─────────────────────────────────────
-    # DOCUMENT REGISTER — BULLETPROOF
+    # DOCUMENT REGISTER
     # ─────────────────────────────────────
     st.markdown("""
     <div class="section-glow">
@@ -260,7 +453,6 @@ def render_dashboard(doc_data):
 
     df = pd.DataFrame(doc_data)
 
-    # ✅ Simple, compatible — works on ALL pandas versions
     st.dataframe(
         df,
         use_container_width=True,
