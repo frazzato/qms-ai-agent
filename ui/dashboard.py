@@ -1,132 +1,103 @@
 import streamlit as st
 import pandas as pd
-import time
-import random
+from datetime import datetime
 
 def render_dashboard(doc_data):
 
-    # -----------------------------
-    # SYSTEM HEALTH + LAST AI SYNC
-    # -----------------------------
-    st.subheader("System Overview")
+    # ── KPI Row ──
+    total   = len(doc_data) if doc_data else 0
+    controlled = sum(1 for d in doc_data if d.get("status") == "controlled")   if doc_data else 0
+    pending    = sum(1 for d in doc_data if d.get("status") == "pending")      if doc_data else 0
+    overdue    = sum(1 for d in doc_data if d.get("status") == "overdue")      if doc_data else 0
 
-    health_score = random.randint(82, 99)
-
-    st.progress(health_score / 100)
-    st.write(f"**System Health:** {health_score}%")
-
-    st.caption(f"Last AI Sync: {time.strftime('%Y-%m-%d %H:%M:%S')}")
-
-    st.divider()
-
-    # -----------------------------
-    # CLICKABLE CARDS (3 ONLY)
-    # -----------------------------
-    st.markdown("""
-    <style>
-        .pillar-card {
-            padding: 20px;
+    k1, k2, k3, k4 = st.columns(4)
+    for col, (val, label, icon, color) in zip(
+        [k1, k2, k3, k4],
+        [
+            (total,      "Total Documents",     "📁", "#3b82f6"),
+            (controlled, "Controlled",          "✅", "#22c55e"),
+            (pending,    "Pending Review",      "⏳", "#f59e0b"),
+            (overdue,    "Overdue / Non-Conf.", "⚠️",  "#ef4444"),
+        ],
+    ):
+        col.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #fff, #f8fafc);
+            border: 1px solid #e2e8f0;
+            border-top: 3px solid {color};
             border-radius: 12px;
-            color: white;
-            font-weight: 600;
-            font-size: 20px;
+            padding: 1.2rem 1rem;
             text-align: center;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-        .pillar-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0px 4px 12px rgba(0,0,0,0.25);
-        }
-        .audit  { background: #50C878; }
-        .train  { background: #F5A623; }
-        .master { background: #9B59B6; }
-    </style>
-    """, unsafe_allow_html=True)
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        ">
+            <div style="font-size:1.4rem;">{icon}</div>
+            <div style="font-size:1.8rem; font-weight:700; color:#0f172a;">{val}</div>
+            <div style="font-size:0.78rem; font-weight:500; color:#64748b;
+                        text-transform:uppercase; letter-spacing:0.05em;">{label}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns(3)
+    st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
 
-    with col1:
-        st.markdown('<div class="pillar-card audit">🕵️ Audit Engine</div>', unsafe_allow_html=True)
-        if st.button("Go to Audit", key="audit_btn", use_container_width=True):
-            st.session_state.active_tab = "Audit"
-            st.rerun()  # FIXED HERE
-
-    with col2:
-        st.markdown('<div class="pillar-card train">🎓 Training Module</div>', unsafe_allow_html=True)
-        if st.button("Go to Training", key="train_btn", use_container_width=True):
-            st.session_state.active_tab = "Training"
-            st.rerun()  # FIXED HERE
-
-    with col3:
-        st.markdown('<div class="pillar-card master">📑 Master List</div>', unsafe_allow_html=True)
-        if st.button("Stay on Dashboard", key="master_btn", use_container_width=True):
-            st.session_state.active_tab = "Dashboard"
-            st.rerun()  # FIXED HERE
-
-    st.divider()
-
-    # -----------------------------
-    # STATUS INDICATORS
-    # -----------------------------
-    st.markdown("### 🔵 Status Indicators")
-
-    colA, colB, colC = st.columns(3)
-    colA.metric("Audit Engine", "Ready", "🟢")
-    colB.metric("Training Module", "Stable", "🟢")
-    colC.metric("Master List", "Synced", "🟢")
-
-    st.divider()
-
-    # -----------------------------
-    # COLLAPSIBLE ARCHITECTURE DIAGRAM
-    # -----------------------------
-    with st.expander("📐 System Architecture Diagram"):
+    # ── Document Table ──
+    if doc_data:
         st.markdown("""
-        ```
-        ┌──────────────────────────┐
-        │        Audit Engine       │
-        │ - Clause Mapping          │
-        │ - Nonconformity Checks    │
-        └─────────────┬────────────┘
-                      │
-        ┌─────────────▼────────────┐
-        │      Training Module      │
-        │ - Summaries               │
-        │ - Knowledge Checks        │
-        └─────────────┬────────────┘
-                      │
-        ┌─────────────▼────────────┐
-        │      Master List (Docs)   │
-        │ - GitHub Sync             │
-        │ - Metadata Extraction     │
-        └──────────────────────────┘
-        ```
-        """)
+        <div style="font-size:1.05rem; font-weight:600; color:#0f172a;
+                    border-bottom:2px solid #3b82f6; display:inline-block;
+                    padding-bottom:0.3rem; margin-bottom:0.8rem;">
+            📄 Document Register
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.divider()
+        STATUS_STYLE = {
+            "controlled": ("✅ Controlled", "#dcfce7", "#166534"),
+            "pending":    ("⏳ Pending",    "#fef9c3", "#854d0e"),
+            "overdue":    ("⚠️ Overdue",    "#fee2e2", "#991b1b"),
+        }
 
-    # -----------------------------
-    # DOCUMENT COVERAGE HEATMAP
-    # -----------------------------
-    st.markdown("### 🔥 Document Coverage Heatmap")
+        rows_html = ""
+        for d in doc_data:
+            label, bg, fg = STATUS_STYLE.get(
+                d.get("status", ""), ("❔ Unknown", "#f1f5f9", "#475569")
+            )
+            badge = (f'<span style="background:{bg}; color:{fg}; padding:0.2rem 0.65rem;'
+                     f' border-radius:20px; font-size:0.75rem; font-weight:600;">'
+                     f'{label}</span>')
 
-    heatmap_data = pd.DataFrame({
-        "Document": [d["Document ID"] for d in doc_data],
-        "Coverage Score": [random.randint(70, 100) for _ in doc_data]
-    })
+            rows_html += f"""
+            <tr style="border-bottom:1px solid #f1f5f9;">
+                <td style="padding:0.7rem 1rem; font-weight:500;">{d.get('name','—')}</td>
+                <td style="padding:0.7rem 1rem; color:#64748b;">{d.get('type','—')}</td>
+                <td style="padding:0.7rem 1rem; color:#64748b;">{d.get('revision','—')}</td>
+                <td style="padding:0.7rem 1rem;">{badge}</td>
+                <td style="padding:0.7rem 1rem; color:#94a3b8; font-size:0.85rem;">
+                    {d.get('last_modified','—')}</td>
+            </tr>"""
 
-    st.bar_chart(heatmap_data.set_index("Document"))
+        st.markdown(f"""
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px;
+                    overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+                        <th style="padding:0.75rem 1rem; text-align:left; font-size:0.78rem;
+                                   font-weight:600; color:#64748b; text-transform:uppercase;
+                                   letter-spacing:0.05em;">Document</th>
+                        <th style="padding:0.75rem 1rem; text-align:left; font-size:0.78rem;
+                                   font-weight:600; color:#64748b; text-transform:uppercase;">Type</th>
+                        <th style="padding:0.75rem 1rem; text-align:left; font-size:0.78rem;
+                                   font-weight:600; color:#64748b; text-transform:uppercase;">Rev</th>
+                        <th style="padding:0.75rem 1rem; text-align:left; font-size:0.78rem;
+                                   font-weight:600; color:#64748b; text-transform:uppercase;">Status</th>
+                        <th style="padding:0.75rem 1rem; text-align:left; font-size:0.78rem;
+                                   font-weight:600; color:#64748b; text-transform:uppercase;">Modified</th>
+                    </tr>
+                </thead>
+                <tbody>{rows_html}</tbody>
+            </table>
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.divider()
-
-    # -----------------------------
-    # MASTER LIST TABLE
-    # -----------------------------
-    st.markdown("### 📑 Controlled Document Register")
-
-    if not doc_data:
-        st.info("No documents found in /docs.")
-        return
-
-    df = pd.DataFrame(doc_data)
-    st.dataframe(df, use_container_width=True, hide_index=True)
+    else:
+        st.info("Upload documents to the **docs/** folder to populate the register.")
