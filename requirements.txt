@@ -1,3 +1,5 @@
 streamlit
 pandas
 groq>=0.5.0
+python-docx
+python-dateutil
