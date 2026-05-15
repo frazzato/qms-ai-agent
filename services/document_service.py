@@ -17,11 +17,9 @@ def _extract_docx_metadata(filepath: str) -> dict:
         | Field        | Details                              |
         | Version      | 3.0                                  |
         | Approved By  | James Carter, Director of Operations |
-        | Revision Date| May 6, 2026                          |
 
     Layout 2 — Revision History table:
         | Version | Description | Date         | Author         |
-        | 1.0     | Initial     | Jan 15, 2024 | Sarah Mitchell |
         | 3.0     | Update      | May 6, 2026  | Sarah Mitchell |
     """
     meta = {
@@ -38,22 +36,15 @@ def _extract_docx_metadata(filepath: str) -> dict:
     except Exception:
         return meta
 
-    # ─────────────────────────────────────
-    # SCAN ALL TABLES
-    # ─────────────────────────────────────
     for table in doc.tables:
         rows = table.rows
         if len(rows) < 2:
             continue
 
-        # Get first row cells to determine table type
         first_row = [cell.text.strip() for cell in rows[0].cells]
 
-        # ── Detect KEY-VALUE table (2 columns: Field | Details) ──
         if _is_key_value_table(first_row, rows):
             _parse_key_value_table(rows, meta)
-
-        # ── Detect REVISION HISTORY table ──
         elif _is_revision_table(first_row):
             _parse_revision_table(rows, first_row, meta)
 
@@ -61,10 +52,6 @@ def _extract_docx_metadata(filepath: str) -> dict:
 
 
 def _is_key_value_table(first_row: list, rows) -> bool:
-    """
-    A key-value table typically has 2 columns and the left column
-    contains known field labels like 'Version', 'Approved By', etc.
-    """
     if len(first_row) < 2:
         return False
 
@@ -81,14 +68,12 @@ def _is_key_value_table(first_row: list, rows) -> bool:
             for label in known_labels:
                 if label in cells[0]:
                     label_hits += 1
+                    break
 
-    return label_hits >= 2  # At least 2 recognized labels → key-value table
+    return label_hits >= 2
 
 
 def _is_revision_table(first_row: list) -> bool:
-    """
-    A revision history table has headers like Version, Date, Author, etc.
-    """
     headers_lower = [h.lower() for h in first_row]
     rev_keywords = ["version", "revision", "rev", "rev."]
     date_keywords = ["date", "effective date"]
@@ -100,79 +85,63 @@ def _is_revision_table(first_row: list) -> bool:
 
 
 def _parse_key_value_table(rows, meta: dict):
-    """
-    Parse a 2-column key-value table.
-    Reads every row as:  label (col 0)  →  value (col 1)
-    """
     FIELD_MAP = {
-        "version":          "revision",
-        "revision":         "revision",
-        "rev":              "revision",
-        "approved by":      "approved_by",
+        "version":            "revision",
+        "revision":           "revision",
+        "rev":                "revision",
+        "approved by":        "approved_by",
         "approval authority": "approved_by",
-        "authorized by":    "approved_by",
-        "reviewed by":      "reviewed_by",
-        "prepared by":      "prepared_by",
-        "revision date":    "approval_date",
-        "effective date":   "approval_date",
-        "date approved":    "approval_date",
-        "date":             "approval_date",
-        "document number":  "doc_number",
-        "doc number":       "doc_number",
-        "document id":      "doc_number",
+        "authorized by":      "approved_by",
+        "reviewed by":        "reviewed_by",
+        "prepared by":        "prepared_by",
+        "revision date":      "approval_date",
+        "effective date":     "approval_date",
+        "date approved":      "approval_date",
+        "document number":    "doc_number",
+        "doc number":         "doc_number",
+        "document id":        "doc_number",
     }
 
     for row in rows:
         cells = [c.text.strip() for c in row.cells]
-        if len(cells) < 2 or not cells[1]:
+        if len(cells) < 2 or not cells[0]:
             continue
 
         label = cells[0].lower().rstrip(":")
         value = cells[1].strip()
 
+        if not value:
+            continue
+
         for key_pattern, meta_key in FIELD_MAP.items():
             if key_pattern in label:
-                # Don't overwrite with empty values
-                if not value:
-                    break
-
                 if meta_key == "approval_date":
                     parsed = _parse_date(value)
                     if parsed:
                         meta[meta_key] = parsed
                 elif meta_key == "revision":
-                    # Store as-is from the document (e.g., "3.0")
-                    meta[meta_key] = value
+                    meta[meta_key] = _clean_revision(value)
                 else:
                     meta[meta_key] = value
                 break
 
 
 def _parse_revision_table(rows, headers: list, meta: dict):
-    """
-    Parse a revision history table. Reads the LAST data row
-    (= most recent revision).
-    """
     headers_lower = [h.lower() for h in headers]
 
-    # Find column indices
     ver_idx    = _find_col(headers_lower, ["version", "revision", "rev", "rev."])
     date_idx   = _find_col(headers_lower, ["date", "effective date", "revision date"])
-    author_idx = _find_col(headers_lower, ["author", "revised by", "approved by",
-                                            "changed by", "updated by"])
 
     if len(rows) < 2:
         return
 
-    # Read the LAST data row (most recent revision)
     last_row = [c.text.strip() for c in rows[-1].cells]
 
-    # Only use revision history as FALLBACK
-    # (key-value table takes priority)
+    # Only use as fallback — key-value table takes priority
     if ver_idx is not None and not meta["revision"]:
         val = last_row[ver_idx] if ver_idx < len(last_row) else ""
         if val:
-            meta["revision"] = val
+            meta["revision"] = _clean_revision(val)
 
     if date_idx is not None and not meta["approval_date"]:
         val = last_row[date_idx] if date_idx < len(last_row) else ""
@@ -180,12 +149,41 @@ def _parse_revision_table(rows, headers: list, meta: dict):
         if parsed:
             meta["approval_date"] = parsed
 
-    # Note: Author in revision history ≠ Approver
-    # We do NOT set approved_by from here
+
+def _clean_revision(raw: str) -> str:
+    """
+    Extracts ONLY the revision identifier from raw text.
+
+    Examples:
+        '3.0'           → '3.0'
+        'Rev C'         → 'C'
+        'Revision 5'    → '5'
+        'v2.1'          → '2.1'
+        'Rev. B'        → 'B'
+        'A'             → 'A'
+        '12'            → '12'
+        'Version 4.0'   → '4.0'
+    """
+    if not raw:
+        return "—"
+
+    text = raw.strip()
+
+    # Remove common prefixes: Rev, Rev., Revision, Version, Ver, Ver., v
+    text = re.sub(
+        r'^(?:revision|version|ver|rev)\.?\s*',
+        '',
+        text,
+        flags=re.IGNORECASE
+    ).strip()
+
+    # Remove leading 'v' or 'V' (e.g., v2.1 → 2.1)
+    text = re.sub(r'^[vV](?=\d)', '', text).strip()
+
+    return text if text else "—"
 
 
-def _find_col(headers: list, keywords: list) -> int | None:
-    """Find column index matching any keyword."""
+def _find_col(headers: list, keywords: list):
     for i, h in enumerate(headers):
         for kw in keywords:
             if kw in h:
@@ -193,8 +191,7 @@ def _find_col(headers: list, keywords: list) -> int | None:
     return None
 
 
-def _parse_date(text: str) -> datetime.date | None:
-    """Try multiple date formats commonly used in QMS docs."""
+def _parse_date(text: str):
     if not text:
         return None
     text = text.strip()
@@ -202,11 +199,11 @@ def _parse_date(text: str) -> datetime.date | None:
         "%Y-%m-%d",
         "%m/%d/%Y",
         "%d/%m/%Y",
-        "%B %d, %Y",     # May 6, 2026
-        "%b %d, %Y",     # May 6, 2026 (short month)
-        "%d-%b-%Y",       # 06-May-2026
-        "%d %B %Y",       # 06 May 2026
-        "%b. %d, %Y",     # May. 6, 2026
+        "%B %d, %Y",
+        "%b %d, %Y",
+        "%d-%b-%Y",
+        "%d %B %Y",
+        "%b. %d, %Y",
         "%m-%d-%Y",
     ]
     for fmt in formats:
@@ -228,10 +225,6 @@ def _calculate_status(next_review: datetime.date) -> str:
 
 
 def scan_documents():
-    """
-    Scans DOCS_DIR. For .docx files, reads metadata from INSIDE the document.
-    Returns: (docs_list, filenames_list)
-    """
     docs = []
     files = []
 
@@ -255,7 +248,7 @@ def scan_documents():
         else:
             doc_id, title = "N/A", name_no_ext
 
-        # ── File system date as last resort fallback ──
+        # ── File system date as last resort ──
         stat = os.stat(filepath)
         file_mod_date = datetime.date.fromtimestamp(stat.st_mtime)
 
@@ -272,10 +265,10 @@ def scan_documents():
         if meta.get("doc_number"):
             doc_id = meta["doc_number"]
 
-        # ── Build final values with fallbacks ──
-        revision      = meta["revision"]      or "—"
-        approved_by   = meta["approved_by"]   or "—"
-        approval_date = meta["approval_date"] or file_mod_date
+        # ── Build final values ──
+        revision      = meta.get("revision")      or "—"
+        approved_by   = meta.get("approved_by")   or "—"
+        approval_date = meta.get("approval_date") or file_mod_date
         next_review   = approval_date + relativedelta(months=REVIEW_CYCLE_MONTHS)
         status        = _calculate_status(next_review)
 
