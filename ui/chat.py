@@ -142,25 +142,39 @@ def render_ai_application(docx_files, *args, **kwargs):
                     except Exception as e:
                         st.error(f"Groq API Error: {str(e)}")
 
-            # ──────────────────────────────────────────
-            # MODE 4: CHECKLIST BUILDER (FIXED)
+         # ──────────────────────────────────────────
+            # MODE 4: CHECKLIST BUILDER (CLAUSE-MATCHING CORES)
             # ──────────────────────────────────────────
             elif mode == "✅ Checklist Builder" and run_engine:
                 final_doc_context = ""
                 if ref_doc != "— None —":
                     final_doc_context = _read_repo_docx(ref_doc)
                 
-                with st.spinner("Building targeted audit checklist..."):
+                # Hardened to look up standard requirements internally, then cross-reference your text
+                direct_override_prompt = f"""You are an elite Lead QMS Auditor specializing in AS9100 Rev D and ISO 9001:2015.
+                
+                CONTEXT: The user has requested an internal audit checklist for a specific target clause. You know the exact text and rules of the official AS9100/ISO standard internally.
+                
+                TARGET SPECIFIC CLAUSE NUMBER / TOPIC: 
+                {clause}
+                
+                PROCESS AREA: 
+                {process_area if process_area else "General Operations"}
+                
+                REFERENCE COMPANY PROCEDURE TEXT (COMPARE AGAINST THIS):
+                {final_doc_context[:4000] if final_doc_context else "No reference document provided. Base the checklist strictly on standard requirements."}
+                
+                INSTRUCTIONS:
+                1. Recall your internal standard library for Clause {clause}.
+                2. Cross-reference the provided Company Procedure Text. 
+                3. Create a numbered internal audit checklist specifically designed to verify if the company's process actually fulfills Clause {clause}.
+                4. For each question, detail the objective evidence required and notice if there are obvious gaps based on what was read in the procedure text.
+                
+                Format the output as a highly professional, clean Markdown audit checklist."""
+                
+                with st.spinner(f"Retrieving standard data and analyzing compliance for Clause {clause}..."):
                     try:
-                        # Named arguments matching the updated services/ai_service.py signature
-                        result = generate_checklist(
-                            clause=clause, 
-                            process_area=process_area, 
-                            doc_context=final_doc_context
-                        )
+                        result = ask_groq(direct_override_prompt)
                         st.markdown(result)
                     except Exception as e:
                         st.error(f"Groq API Error: {str(e)}")
-            
-            elif not run_engine:
-                st.info("Awaiting input... Select a tool on the left, provide context, and click the run button.")
