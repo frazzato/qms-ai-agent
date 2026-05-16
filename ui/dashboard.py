@@ -56,28 +56,14 @@ def render_dashboard(doc_data):
     total = len(doc_data) if doc_data else 0
 
     # ─────────────────────────────────────
-    # LEFT NAVIGATION (MOBILE RESPONSIVE)
+    # LEFT NAVIGATION (Status Only)
     # ─────────────────────────────────────
+    # We removed the duplicate navigation here so it doesn't clash with your app.py
     with st.sidebar:
         st.title("☁️ QMS System")
         st.write("---")
-        
-        # Enterprise-style left navigation using native radio buttons
-        nav_selection = st.radio(
-            "Navigation",
-            ["Dashboard", "Audit Workspace", "CAPA Management", "Risk Matrices", "Training Hub"],
-            label_visibility="hidden"
-        )
-        
-        st.write("---")
         st.caption(f"System Health: **{random.randint(95, 99)}%**")
         st.caption(f"Last Sync: {time.strftime('%H:%M')} CDT")
-
-    # If the user clicks something else in the sidebar, we can route them.
-    # For now, we will assume they are on the Dashboard.
-    if nav_selection != "Dashboard":
-        st.info(f"Navigating to {nav_selection}... (Connect your routing logic here)")
-        return
 
     # ─────────────────────────────────────
     # HERO SECTION
@@ -94,7 +80,7 @@ def render_dashboard(doc_data):
     """, unsafe_allow_html=True)
 
     # ─────────────────────────────────────
-    # KPI METRICS (Streamlit Native)
+    # KPI METRICS
     # ─────────────────────────────────────
     st.markdown('<div class="section-header">System Overview</div>', unsafe_allow_html=True)
     
@@ -116,20 +102,20 @@ def render_dashboard(doc_data):
     st.write("") # Spacer
 
     # ─────────────────────────────────────
-    # AI MODULES (Enterprise Cards)
+    # AI MODULES
     # ─────────────────────────────────────
     st.markdown('<div class="section-header">AI Capabilities</div>', unsafe_allow_html=True)
 
-    # Row 1 of modules
     col1, col2, col3 = st.columns(3)
     
     with col1:
         with st.container(border=True):
             st.markdown("### 📋 Gap Analysis")
             st.write("Clause coverage mapping against AS9100 & ISO 9001 requirements.")
-            st.write("") # Spacer
+            st.write("") 
             if st.button("Launch Analysis", key="btn_gap", type="primary", use_container_width=True):
-                st.success("Routing to Gap Analysis...")
+                st.session_state.active_tab = "AI Application"
+                st.rerun()
                 
     with col2:
         with st.container(border=True):
@@ -137,7 +123,8 @@ def render_dashboard(doc_data):
             st.write("AI-assisted root cause analysis & corrective action reports.")
             st.write("") 
             if st.button("Open CAPA", key="btn_capa", use_container_width=True):
-                st.success("Routing to CAPA...")
+                st.session_state.active_tab = "AI Application"
+                st.rerun()
 
     with col3:
         with st.container(border=True):
@@ -145,9 +132,9 @@ def render_dashboard(doc_data):
             st.write("Auto-generated internal audit checklists structured by clause.")
             st.write("") 
             if st.button("Build Checklist", key="btn_audit", use_container_width=True):
-                st.success("Routing to Checklists...")
+                st.session_state.active_tab = "AI Application"
+                st.rerun()
 
-    # Row 2 of modules
     col4, col5, col6 = st.columns(3)
     
     with col4:
@@ -156,7 +143,8 @@ def render_dashboard(doc_data):
             st.write("Likelihood × severity calculation matrix with AI mitigations.")
             st.write("") 
             if st.button("Assess Risks", key="btn_risk", use_container_width=True):
-                st.success("Routing to Risk Matrix...")
+                st.session_state.active_tab = "AI Application"
+                st.rerun()
 
     with col5:
         with st.container(border=True):
@@ -164,16 +152,13 @@ def render_dashboard(doc_data):
             st.write("Generative training modules with automated knowledge checks.")
             st.write("") 
             if st.button("Manage Training", key="btn_train", use_container_width=True):
-                st.success("Routing to Training...")
-                
-    with col6:
-        # Empty column for grid alignment, or add a 6th tool here!
-        pass 
+                st.session_state.active_tab = "Training"
+                st.rerun()
 
     st.write("") # Spacer
 
     # ─────────────────────────────────────
-    # DATA TABLE (Document Register)
+    # DATA TABLE
     # ─────────────────────────────────────
     st.markdown('<div class="section-header">Document Registry</div>', unsafe_allow_html=True)
 
