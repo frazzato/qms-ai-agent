@@ -190,76 +190,76 @@ doc_data, raw_files = scan_documents()
 # ─────────────────────────────────────
 def render_dashboard(doc_data):
     st.markdown("""
-    <style>
-    /* Hero & Structure */
-    .enterprise-hero { padding: 2rem; border-radius: 8px; background-color: rgba(26, 115, 232, 0.05); border: 1px solid rgba(26, 115, 232, 0.2); border-left: 6px solid #1a73e8; margin-bottom: 2rem; }
-    .hero-title { margin-top: 0; margin-bottom: 0.5rem; font-size: 1.75rem; font-weight: 600; }
-    .hero-subtitle { font-size: 1rem; opacity: 0.8; max-width: 700px; line-height: 1.5; }
-    .badge { display: inline-block; background-color: #e6f4ea; color: #137333; padding: 4px 10px; border-radius: 16px; font-size: 0.75rem; font-weight: 600; margin-bottom: 1rem; }
-    .section-header { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; margin-top: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(128, 128, 128, 0.2); }
-    
-    /* NEW: Enterprise Table Styling */
-    .enterprise-table-wrapper {
-        width: 100%;
-        overflow-x: auto;
-        border-radius: 8px;
-        border: 1px solid rgba(128, 128, 128, 0.2);
-        margin-top: 1rem;
-        margin-bottom: 2rem;
-    }
-    .enterprise-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-family: inherit;
-        font-size: 0.88rem;
-        text-align: left;
-    }
-    .enterprise-table th {
-        background-color: rgba(26, 115, 232, 0.08);
-        color: #1a73e8;
-        font-weight: 600;
-        padding: 12px 16px;
-        border-bottom: 2px solid rgba(26, 115, 232, 0.2);
-        white-space: nowrap;
-    }
-    .enterprise-table td {
-        padding: 12px 16px;
-        border-bottom: 1px solid rgba(128, 128, 128, 0.1);
-        color: inherit;
-        vertical-align: middle;
-    }
-    .enterprise-table tr:hover {
-        background-color: rgba(128, 128, 128, 0.05);
-    }
-    
-    /* NEW: Status Pills */
-    .status-pill {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-        white-space: nowrap;
-    }
-    .pill-active { background-color: #e6f4ea; color: #137333; }
-    .pill-review { background-color: #fef7e0; color: #b06000; }
-    .pill-overdue { background-color: #fce8e6; color: #c5221f; }
-    </style>
-    """, unsafe_allow_html=True)
+<style>
+/* Hero & Structure */
+.enterprise-hero { padding: 2rem; border-radius: 8px; background-color: rgba(26, 115, 232, 0.05); border: 1px solid rgba(26, 115, 232, 0.2); border-left: 6px solid #1a73e8; margin-bottom: 2rem; }
+.hero-title { margin-top: 0; margin-bottom: 0.5rem; font-size: 1.75rem; font-weight: 600; }
+.hero-subtitle { font-size: 1rem; opacity: 0.8; max-width: 700px; line-height: 1.5; }
+.badge { display: inline-block; background-color: #e6f4ea; color: #137333; padding: 4px 10px; border-radius: 16px; font-size: 0.75rem; font-weight: 600; margin-bottom: 1rem; }
+.section-header { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; margin-top: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(128, 128, 128, 0.2); }
+
+/* NEW: Enterprise Table Styling */
+.enterprise-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    margin-top: 1rem;
+    margin-bottom: 2rem;
+}
+.enterprise-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: inherit;
+    font-size: 0.88rem;
+    text-align: left;
+}
+.enterprise-table th {
+    background-color: rgba(26, 115, 232, 0.08);
+    color: #1a73e8;
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 2px solid rgba(26, 115, 232, 0.2);
+    white-space: nowrap;
+}
+.enterprise-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+    color: inherit;
+    vertical-align: middle;
+}
+.enterprise-table tr:hover {
+    background-color: rgba(128, 128, 128, 0.05);
+}
+
+/* NEW: Status Pills */
+.status-pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+.pill-active { background-color: #e6f4ea; color: #137333; }
+.pill-review { background-color: #fef7e0; color: #b06000; }
+.pill-overdue { background-color: #fce8e6; color: #c5221f; }
+</style>
+""", unsafe_allow_html=True)
 
     total = len(doc_data) if doc_data else 0
 
     st.markdown(f"""
-    <div class="enterprise-hero">
-        <div class="badge">● SYSTEM ACTIVE</div>
-        <h1 class="hero-title">AS9100 Rev D Intelligence Hub</h1>
-        <div class="hero-subtitle">
-            Your compliance engine is currently managing <strong>{total} controlled documents</strong>. 
-            AI modules are continuously monitoring clause coverage, assessing risks, and preparing internal audit data.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+<div class="enterprise-hero">
+<div class="badge">● SYSTEM ACTIVE</div>
+<h1 class="hero-title">AS9100 Rev D Intelligence Hub</h1>
+<div class="hero-subtitle">
+Your compliance engine is currently managing <strong>{total} controlled documents</strong>. 
+AI modules are continuously monitoring clause coverage, assessing risks, and preparing internal audit data.
+</div>
+</div>
+""", unsafe_allow_html=True)
 
     st.markdown('<div class="section-header">System Overview</div>', unsafe_allow_html=True)
     
@@ -332,22 +332,21 @@ def render_dashboard(doc_data):
     if not doc_data:
         st.warning("No documents found! Please place your .docx files in the 'docs' folder.")
     else:
-        table_html = '<div class="enterprise-table-wrapper"><table class="enterprise-table">'
-        table_html += '''
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Document Title</th>
-                <th>Format</th>
-                <th>Rev</th>
-                <th>Approver</th>
-                <th>Approved On</th>
-                <th>Next Review</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-        '''
+        table_html = '<div class="enterprise-table-wrapper"><table class="enterprise-table">\n'
+        table_html += '<thead>\n'
+        table_html += '<tr>\n'
+        table_html += '<th>ID</th>\n'
+        table_html += '<th>Document Title</th>\n'
+        table_html += '<th>Format</th>\n'
+        table_html += '<th>Rev</th>\n'
+        table_html += '<th>Approver</th>\n'
+        table_html += '<th>Approved On</th>\n'
+        table_html += '<th>Next Review</th>\n'
+        table_html += '<th>Status</th>\n'
+        table_html += '</tr>\n'
+        table_html += '</thead>\n'
+        table_html += '<tbody>\n'
+        
         for doc in doc_data:
             # Determine which color pill to use based on the status
             status = doc.get("Status", "Active")
@@ -358,18 +357,17 @@ def render_dashboard(doc_data):
             else:
                 pill_class = "pill-overdue"
                 
-            table_html += f'''
-            <tr>
-                <td>{doc.get("Document ID", "")}</td>
-                <td style="font-weight: 600;">{doc.get("Title", "")}</td>
-                <td>{doc.get("Format", "")}</td>
-                <td>{doc.get("Revision", "")}</td>
-                <td>{doc.get("Approved By", "")}</td>
-                <td>{doc.get("Approval Date", "")}</td>
-                <td>{doc.get("Next Review", "")}</td>
-                <td><span class="status-pill {pill_class}">{status}</span></td>
-            </tr>
-            '''
+            table_html += '<tr>\n'
+            table_html += f'<td>{doc.get("Document ID", "")}</td>\n'
+            table_html += f'<td style="font-weight: 600;">{doc.get("Title", "")}</td>\n'
+            table_html += f'<td>{doc.get("Format", "")}</td>\n'
+            table_html += f'<td>{doc.get("Revision", "")}</td>\n'
+            table_html += f'<td>{doc.get("Approved By", "")}</td>\n'
+            table_html += f'<td>{doc.get("Approval Date", "")}</td>\n'
+            table_html += f'<td>{doc.get("Next Review", "")}</td>\n'
+            table_html += f'<td><span class="status-pill {pill_class}">{status}</span></td>\n'
+            table_html += '</tr>\n'
+            
         table_html += '</tbody></table></div>'
         
         # Render the custom HTML table
