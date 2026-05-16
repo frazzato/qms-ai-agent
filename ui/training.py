@@ -1,152 +1,88 @@
+import os
 import streamlit as st
-from services.training_service import generate_training_module  # ✅ your original import
+from docx import Document
+from config.settings import DOCS_DIR
+from services.ai_service import generate_training_module
 
-def render_training(files):
+def _read_repo_docx(filename: str) -> str:
+    filepath = os.path.join(DOCS_DIR, filename)
+    if not os.path.exists(filepath): return ""
+    try:
+        doc = Document(filepath)
+        return "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+    except Exception: return ""
 
-    if not files:
-        st.markdown("""
-        <div style="background:#f8fafc; border:1px dashed #cbd5e1;
-                    border-radius:12px; padding:2.5rem; text-align:center;
-                    color:#94a3b8; margin-top:1rem;">
-            <div style="font-size:2rem; margin-bottom:0.5rem;">📑</div>
-            <div style="font-size:0.95rem;">No documents available for training.<br>
-                 Add files to the <b>docs/</b> folder to get started.</div>
-        </div>
-        """, unsafe_allow_html=True)
-        return
+def _get_docx_files() -> list:
+    if not os.path.exists(DOCS_DIR): return []
+    return [f for f in os.listdir(DOCS_DIR) if f.lower().endswith(".docx")]
 
-    # ─────────────────────────────────────
-    # DOCUMENT SELECTOR + GENERATE BUTTON
-    # ─────────────────────────────────────
-    sel_col, btn_col = st.columns([3, 1])
+def render_training_hub(*args, **kwargs):
+    st.title("🎓 Smart Training Hub")
+    st.write("---")
 
-    with sel_col:
-        doc = st.selectbox(
-            "Select Document:",
-            files,
-            label_visibility="collapsed",
-            format_func=lambda f: f"📄  {f}",
-        )
-    with btn_col:
-        generate = st.button("Generate Training Module ✨",
-                             type="primary", use_container_width=True)
+    docx_files = _get_docx_files()
+    col1, col2 = st.columns([1, 2.5])
 
-    if generate:
-        with st.spinner(f"Building training module for **{doc}**..."):
-            st.session_state["training_data"] = generate_training_module(doc)
+    with col1:
+        st.markdown("### 📚 Module Configuration")
+        selected_doc = st.selectbox("Select Repository Document", docx_files)
+        
+        st.write("")
+        run_engine = st.button("Generate Training Content", type="primary", use_container_width=True)
 
-    # ─────────────────────────────────────
-    # TRAINING MODULE OUTPUT
-    # ─────────────────────────────────────
-    if "training_data" in st.session_state:
-        data = st.session_state["training_data"]
+        st.write("")
+        if st.button("← Back to Dashboard", use_container_width=True):
+            st.session_state.active_tab = "Dashboard"
+            st.rerun()
 
-        st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-
-        # ── Section 1: Summary ──
-        st.markdown(f"""
-        <div style="background:linear-gradient(135deg,#eff6ff,#f8fafc);
-                    border:1px solid #bfdbfe; border-left:4px solid #3b82f6;
-                    border-radius:12px; padding:1.3rem 1.5rem; margin-bottom:1rem;
-                    box-shadow:0 1px 4px rgba(0,0,0,0.05);">
-            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.6rem;">
-                <span style="font-size:1.2rem;">⚡</span>
-                <span style="font-size:1rem; font-weight:700; color:#1e40af;">
-                    1 · The 30-Second Summary</span>
-            </div>
-            <div style="font-size:0.9rem; color:#1e293b; line-height:1.7;">
-                {data['summary']}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # ── Section 2: Importance ──
-        st.markdown(f"""
-        <div style="background:linear-gradient(135deg,#f0fdf4,#f8fafc);
-                    border:1px solid #bbf7d0; border-left:4px solid #22c55e;
-                    border-radius:12px; padding:1.3rem 1.5rem; margin-bottom:1rem;
-                    box-shadow:0 1px 4px rgba(0,0,0,0.05);">
-            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.6rem;">
-                <span style="font-size:1.2rem;">🎯</span>
-                <span style="font-size:1rem; font-weight:700; color:#166534;">
-                    2 · Why It Is Important</span>
-            </div>
-            <div style="font-size:0.9rem; color:#1e293b; line-height:1.7;">
-                {data['importance']}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # ── Section 3: Audit Trap ──
-        st.markdown(f"""
-        <div style="background:linear-gradient(135deg,#fef9c3,#fffbeb);
-                    border:1px solid #fde68a; border-left:4px solid #f59e0b;
-                    border-radius:12px; padding:1.3rem 1.5rem; margin-bottom:1rem;
-                    box-shadow:0 1px 4px rgba(0,0,0,0.05);">
-            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.6rem;">
-                <span style="font-size:1.2rem;">⚠️</span>
-                <span style="font-size:1rem; font-weight:700; color:#854d0e;">
-                    3 · The Audit Trap</span>
-            </div>
-            <div style="font-size:0.9rem; color:#1e293b; line-height:1.7;">
-                <strong>Watch Out:</strong> {data['trap']}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # ── Section 4: Knowledge Check ──
-        st.markdown(f"""
-        <div style="background:#fff; border:1px solid #e2e8f0;
-                    border-left:4px solid #8b5cf6; border-radius:12px;
-                    padding:1.3rem 1.5rem; margin-bottom:0.5rem;
-                    box-shadow:0 1px 4px rgba(0,0,0,0.05);">
-            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.3rem;">
-                <span style="font-size:1.2rem;">🧠</span>
-                <span style="font-size:1rem; font-weight:700; color:#6d28d9;">
-                    4 · Knowledge Check</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # ── Quiz (Streamlit widgets — must be outside HTML) ──
-        user_answer = st.radio(
-            data["question"],
-            data["options"],
-            index=None,
-            key="training_quiz",
-        )
-
-        submit_col, _ = st.columns([1, 3])
-        with submit_col:
-            submitted = st.button("Submit Answer ✅", type="primary",
-                                  use_container_width=True)
-
-        if submitted:
-            if user_answer is None:
-                st.info("☝️ Please select an answer first.")
-            else:
-                letters = ["A", "B", "C", "D"]
-                selected_letter = letters[data["options"].index(user_answer)]
-
-                if selected_letter == data["answer"]:
-                    st.markdown(f"""
-                    <div style="background:#dcfce7; border:1px solid #bbf7d0;
-                                border-radius:10px; padding:1rem 1.2rem;
-                                margin-top:0.5rem; display:flex;
-                                align-items:center; gap:0.6rem;">
-                        <span style="font-size:1.5rem;">🎉</span>
-                        <span style="font-size:0.95rem; font-weight:600; color:#166534;">
-                            Correct! ({selected_letter})</span>
-                    </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""
-                    <div style="background:#fee2e2; border:1px solid #fecaca;
-                                border-radius:10px; padding:1rem 1.2rem;
-                                margin-top:0.5rem; display:flex;
-                                align-items:center; gap:0.6rem;">
-                        <span style="font-size:1.5rem;">❌</span>
-                        <span style="font-size:0.95rem; font-weight:600; color:#991b1b;">
-                            Incorrect — the correct answer was: {data['answer']}</span>
-                    </div>
-                    """, unsafe_allow_html=True)
+    with col2:
+        st.markdown("### 📝 Interactive Training View")
+        with st.container(border=True, height=650):
+            
+            # We use st.session_state to save the JSON so the quiz doesn't disappear when the user clicks an answer
+            if run_engine:
+                doc_context = _read_repo_docx(selected_doc)
+                with st.spinner(f"Generating interactive module for {selected_doc}..."):
+                    try:
+                        st.session_state.training_data = generate_training_module(selected_doc, doc_context)
+                    except Exception as e:
+                        st.error(f"Failed to generate JSON. Ensure Groq API key is correct. Error: {e}")
+            
+            # Render the UI if we have data saved in the session
+            if "training_data" in st.session_state:
+                data = st.session_state.training_data
+                
+                # Render the Document Info
+                st.markdown(f"#### 📄 {selected_doc}")
+                st.write("**Summary:**", data.get("summary", ""))
+                st.write("**Why it Matters:**", data.get("importance", ""))
+                
+                # Render the Audit Trap
+                st.markdown(f"""
+                <div style="background-color: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; padding: 1rem; margin: 1rem 0; border-radius: 4px;">
+                    <strong>⚠️ Common Audit Trap:</strong> {data.get("trap", "")}
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.write("---")
+                
+                # Render the Interactive Quiz
+                st.markdown("#### 🧠 Knowledge Check")
+                st.write(data.get("question", ""))
+                
+                # Display radio buttons for the options
+                user_choice = st.radio("Select your answer:", data.get("options", []), index=None, label_visibility="collapsed")
+                
+                if st.button("Submit Answer"):
+                    if not user_choice:
+                        st.warning("Please select an answer first.")
+                    else:
+                        correct_letter = data.get("answer", "")
+                        # Check if the user's selected text starts with the correct letter (e.g., "A) ...")
+                        if user_choice.startswith(correct_letter):
+                            st.success(f"**Correct!** Great job understanding {selected_doc}.")
+                        else:
+                            st.error(f"**Incorrect.** The correct answer was **{correct_letter}**.")
+            
+            elif not run_engine:
+                st.info("Select a document on the left and click 'Generate' to build an interactive quiz.")
