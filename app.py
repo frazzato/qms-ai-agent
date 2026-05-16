@@ -8,20 +8,20 @@ from ui.dashboard import render_dashboard
 from ui.chat import render_ai_application
 from ui.training import render_training_hub
 
-# 2. IMPORT CONFIG & YOUR REAL METADATA SCANNER
+# 2. IMPORT CONFIG & MAP EXACT FILE SERVICE PATH
 from config.settings import DOCS_DIR
-from services.documents import scan_documents  # <-- THE ONLY SCAN IMPORT WE NEED
+from services.document_service import scan_documents  # <-- CORRECT INTERFACE PATH MATCH
 
 st.set_page_config(page_title="QMS System", layout="wide")
 
 if "active_tab" not in st.session_state:
     st.session_state.active_tab = "Dashboard"
 
-# Fetch perfectly extracted, metadata-parsed records directly from your documents.py engine
+# Fetch perfectly extracted records
 doc_data, available_files = scan_documents()
 
 # ─────────────────────────────────────
-# 3. MAIN ROUTING (The Traffic Cop)
+# 3. MAIN ROUTING
 # ─────────────────────────────────────
 def main():
     with st.sidebar:
@@ -43,7 +43,6 @@ def main():
         st.caption("System Health: **98%**")
         st.caption(f"Last Sync: {time.strftime('%H:%M')} CDT")
 
-    # Pass the deeply parsed, real document metadata arrays down to the layout templates
     if st.session_state.active_tab == "Dashboard":
         render_dashboard(doc_data) 
     
