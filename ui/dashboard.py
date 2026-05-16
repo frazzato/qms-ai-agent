@@ -1,160 +1,175 @@
-import os
 import streamlit as st
-from docx import Document
-from config.settings import DOCS_DIR
+import pandas as pd
+import time
 
-# Import your custom functions (kept assess_risk here in case you want to restore it later)
-from services.ai_service import (
-    ask_groq, analyze_gaps, generate_capa,
-    generate_checklist
-)
+def render_dashboard(doc_data):
+    # ─────────────────────────────────────
+    # ENTERPRISE CSS OVERRIDES
+    # ─────────────────────────────────────
+    st.markdown("""
+    <style>
+    .enterprise-hero {
+        padding: 2rem;
+        border-radius: 8px;
+        background-color: rgba(26, 115, 232, 0.05);
+        border: 1px solid rgba(26, 115, 232, 0.2);
+        border-left: 6px solid #1a73e8;
+        margin-bottom: 2rem;
+    }
+    .hero-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        margin-top: 0;
+    }
+    .hero-subtitle {
+        font-size: 1rem;
+        opacity: 0.8;
+        max-width: 700px;
+        line-height: 1.5;
+    }
+    .badge {
+        display: inline-block;
+        background-color: #e6f4ea;
+        color: #137333;
+        padding: 4px 10px;
+        border-radius: 16px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    .section-header {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        margin-top: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+    }
+    .enterprise-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        margin-top: 1rem;
+        margin-bottom: 2rem;
+    }
+    .enterprise-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: inherit;
+        font-size: 0.88rem;
+        text-align: left;
+    }
+    .enterprise-table th {
+        background-color: rgba(26, 115, 232, 0.08);
+        color: #1a73e8;
+        font-weight: 600;
+        padding: 12px 16px;
+        border-bottom: 2px solid rgba(26, 115, 232, 0.2);
+        white-space: nowrap;
+    }
+    .enterprise-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+        color: inherit;
+        vertical-align: middle;
+    }
+    .enterprise-table tr:hover {
+        background-color: rgba(128, 128, 128, 0.05);
+    }
+    .status-pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+    .pill-active { background-color: #e6f4ea; color: #137333; }
+    .pill-review { background-color: #fef7e0; color: #b06000; }
+    .pill-overdue { background-color: #fce8e6; color: #c5221f; }
+    </style>
+    """, unsafe_allow_html=True)
 
-def _read_repo_docx(filename: str) -> str:
-    """Read text from a .docx file in the docs/ repository ONLY."""
-    filepath = os.path.join(DOCS_DIR, filename)
-    if not os.path.exists(filepath): 
-        return ""
+    total = len(doc_data) if doc_data else 0
+
+    with st.sidebar:
+        st.write("---")
+        st.caption("System Health: **98%**")
+        st.caption(f"Last Sync: {time.strftime('%H:%M')} CDT")
+
+    st.markdown(f"""
+    <div class="enterprise-hero">
+        <div class="badge">● SYSTEM ACTIVE</div>
+        <h1 class="hero-title">AS9100 Rev D Intelligence Hub</h1>
+        <div class="hero-subtitle">
+            Your compliance engine is currently managing <strong>{total} controlled documents</strong>. 
+            AI modules are continuously monitoring clause coverage, assessing risks, and preparing internal audit data.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-header">System Overview</div>', unsafe_allow_html=True)
     
-    real_path = os.path.realpath(filepath)
-    repo_path = os.path.realpath(DOCS_DIR)
-    if not real_path.startswith(repo_path): 
-        return ""
+    def count_status(keyword):
+        if not doc_data: return 0
+        return sum(1 for d in doc_data if keyword.lower() in str(d.get("Status", "")).lower())
+
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Total Documents", total)
+    m2.metric("Active & Compliant", count_status("active"), delta="Operational", delta_color="normal")
+    m3.metric("Review Imminent", count_status("review soon"), delta="- Action Needed", delta_color="off")
+    m4.metric("Overdue Elements", count_status("overdue"), delta="- High Priority", delta_color="inverse")
+
+    st.markdown('<div class="section-header">AI Capabilities</div>', unsafe_allow_html=True)
     
-    try:
-        doc = Document(filepath)
-        return "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
-    except Exception:
-        return ""
-
-def render_ai_application(docx_files, *args, **kwargs):
-    st.title("🤖 AI Application Workspace")
-    st.write("---")
-
-    col_left, col_right = st.columns([1, 2.5])
-    run_engine = False
+    col1, col2, col3, col4 = st.columns(4)
     
-    with col_left:
-        st.markdown("### ⚙️ Engine Settings")
-        # DROPPED: "⚠️ Risk Assessment" completely taken out of options list
-        mode = st.selectbox("Select AI Module", ["📋 Gap Analysis", "🛠️ CAPA Generator", "✅ Checklist Builder", "💬 Ask Anything"])
-        st.write("")
-
-        selected_doc = None
-        related_doc = "— None —"
-        ref_doc = "— None —"
-        finding = ""
-        clause = ""
-        process_area = ""
-
-        if mode == "📋 Gap Analysis":
-            if not docx_files:
-                st.warning("No documents found in repository.")
-            else:
-                selected_doc = st.selectbox("Select Document:", docx_files, format_func=lambda f: f"📄 {f}")
-            standard = st.selectbox("Standard:", ["AS9100 Rev D", "ISO 9001:2015", "Both"])
-            st.write("")
-            run_engine = st.button("Run Gap Analysis 🔍", type="primary", use_container_width=True)
-
-        elif mode == "🛠️ CAPA Generator":
-            related_doc = st.selectbox("Related Document (optional):", ["— None —"] + docx_files, format_func=lambda f: f"📄 {f}" if f != "— None —" else f)
-            finding = st.text_area("Audit Finding:", placeholder="e.g. Calibration records for CMM missing...", height=120)
-            clause = st.text_input("Related Clause (optional):")
-            st.write("")
-            run_engine = st.button("Generate CAPA 🛠️", type="primary", use_container_width=True)
-
-        elif mode == "✅ Checklist Builder":
-            clause = st.text_input("Clause or Topic:", placeholder="e.g. 8.5.1 Control of Production")
-            process_area = st.text_input("Process Area (optional):")
-            ref_doc = st.selectbox("Reference Document (optional):", ["— None —"] + docx_files, format_func=lambda f: f"📄 {f}" if f != "— None —" else f)
-            st.write("")
-            run_engine = st.button("Generate Checklist ✅", type="primary", use_container_width=True)
-            
-        elif mode == "💬 Ask Anything":
-            st.info("The Chat interface is active in the main workspace.")
-
-        st.write("")
-        if st.button("← Back to Dashboard", use_container_width=True):
-            st.session_state.active_tab = "Dashboard"
-            st.rerun()
-
-    with col_right:
-        st.markdown("### 📊 Output Generation")
-        with st.container(border=True, height=650):
-            
-            # ──────────────────────────────────────────
-            # MODE 1: ASK ANYTHING
-            # ──────────────────────────────────────────
-            if mode == "💬 Ask Anything":
-                if "audit_messages" not in st.session_state:
-                    st.session_state.audit_messages = [{"role": "assistant", "content": "Hello — I'm your **AS9100 / ISO 9001 Audit Agent**. Ask me anything."}]
+    with col1:
+        with st.container(border=True):
+            st.markdown("### 📋 Gap Analysis")
+            st.write("Clause coverage mapping against AS9100 requirements.")
+            st.write("") 
+            if st.button("Launch Analysis", key="btn_gap", type="primary", use_container_width=True):
+                st.session_state.active_tab = "AI Capabilities"
+                st.rerun()
                 
-                st.markdown('<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:0.5rem; margin-bottom:1rem; height:450px; overflow-y:auto;">', unsafe_allow_html=True)
-                for msg in st.session_state.audit_messages:
-                    is_user = msg["role"] == "user"
-                    bg = "#3b82f6" if is_user else "#ffffff"
-                    fg = "#ffffff" if is_user else "#0f172a"
-                    direction = "row-reverse" if is_user else "row"
-                    st.markdown(f'<div style="display:flex; justify-content:{"flex-end" if is_user else "flex-start"}; margin:0.6rem 0.5rem;"><div style="display:flex; align-items:flex-start; gap:0.5rem; max-width:80%; flex-direction:{direction};"><div style="background:{bg}; color:{fg}; border-radius:14px; padding:0.8rem 1rem; box-shadow:0 1px 3px rgba(0,0,0,0.06);">{msg["content"]}</div></div></div>', unsafe_allow_html=True)
-                st.markdown("</div>", unsafe_allow_html=True)
+    with col2:
+        with st.container(border=True):
+            st.markdown("### 🛠️ CAPA Generator")
+            st.write("AI corrective action reports & root cause logs.")
+            st.write("") 
+            if st.button("Open CAPA", key="btn_capa", use_container_width=True):
+                st.session_state.active_tab = "AI Capabilities"
+                st.rerun()
 
-                col_input, col_btn = st.columns([6, 1])
-                with col_input:
-                    user_input = st.text_input("Ask the audit agent…", label_visibility="collapsed", key="chat_input_box")
-                with col_btn:
-                    send = st.button("Send ➤", use_container_width=True, type="primary")
+    with col3:
+        with st.container(border=True):
+            st.markdown("### ✅ Audit Checklist")
+            st.write("Auto-generated internal checklists structured by clause.")
+            st.write("") 
+            if st.button("Build Checklist", key="btn_audit", use_container_width=True):
+                st.session_state.active_tab = "AI Capabilities"
+                st.rerun()
 
-                if send and user_input:
-                    st.session_state.audit_messages.append({"role": "user", "content": user_input})
-                    with st.spinner("Analyzing compliance standards..."):
-                        try:
-                            response = ask_groq(f"You are an elite AS9100 QMS Auditor. Answer: {user_input}")
-                            st.session_state.audit_messages.append({"role": "assistant", "content": response})
-                        except Exception as e:
-                            st.error(f"Groq API Error: {str(e)}")
-                    st.rerun()
+    with col4:
+        with st.container(border=True):
+            st.markdown("### 🎓 Smart Training")
+            st.write("Generative training modules & knowledge checks.")
+            st.write("") 
+            if st.button("Manage Training", key="btn_train", use_container_width=True):
+                st.session_state.active_tab = "Training Hub"
+                st.rerun()
 
-            # ──────────────────────────────────────────
-            # MODE 2: GAP ANALYSIS
-            # ──────────────────────────────────────────
-            elif mode == "📋 Gap Analysis" and run_engine:
-                if not selected_doc:
-                    st.error("No document selected.")
-                else:
-                    doc_text = _read_repo_docx(selected_doc)
-                    with st.spinner(f"Analyzing {selected_doc}..."):
-                        try:
-                            result = analyze_gaps(doc_text, standard)
-                            st.markdown(result)
-                        except Exception as e:
-                            st.error(f"Groq API Error: {str(e)}")
-
-            # ──────────────────────────────────────────
-            # MODE 3: CAPA GENERATOR
-            # ──────────────────────────────────────────
-            elif mode == "🛠️ CAPA Generator" and run_engine:
-                doc_context = ""
-                if related_doc != "— None —":
-                    doc_context = f"\n\nRELATED DOCUMENT:\n{_read_repo_docx(related_doc)[:3000]}"
-                with st.spinner("Generating corrective actions..."):
-                    try:
-                        result = generate_capa(finding + doc_context, clause)
-                        st.markdown(result)
-                    except Exception as e:
-                        st.error(f"Groq API Error: {str(e)}")
-
-            # ──────────────────────────────────────────
-            # MODE 4: CHECKLIST BUILDER
-            # ──────────────────────────────────────────
-            elif mode == "✅ Checklist Builder" and run_engine:
-                doc_context = ""
-                if ref_doc != "— None —":
-                    doc_context = f"\n\nBASED ON:\n{_read_repo_docx(ref_doc)[:3000]}"
-                with st.spinner("Building audit checklist..."):
-                    try:
-                        result = generate_checklist(clause + doc_context, process_area)
-                        st.markdown(result)
-                    except Exception as e:
-                        st.error(f"Groq API Error: {str(e)}")
-            
-            elif not run_engine:
-                st.info("Awaiting input... Select a tool on the left, provide context, and click the run button.")
+    st.markdown('<div class="section-header">Document Registry</div>', unsafe_allow_html=True)
+    if not doc_data:
+        st.info("No documents found in the repository.")
+    else:
+        table_html = '<div class="enterprise-table-wrapper"><table class="enterprise-table"><thead><tr><th>ID</th><th>Document Title</th><th>Format</th><th>Rev</th><th>Approver</th><th>Approved On</th><th>Next Review</th><th>Status</th></tr></thead><tbody>'
+        for doc in doc_data:
+            status = doc.get("Status", "Active")
+            pill_class = "pill-active" if status == "Active" else "pill-review" if "soon" in status.lower() else "pill-overdue"
+            table_html += f'<tr><td>{doc.get("Document ID", "N/A")}</td><td style="font-weight: 600;">{doc.get("Title", "Untitled")}</td><td>{doc.get("Format", "DOCX")}</td><td>{doc.get("Revision", "—")}</td><td>{doc.get("Approved By", "—")}</td><td>{doc.get("Approval Date", "—")}</td><td>{doc.get("Next Review", "—")}</td><td><span class="status-pill {pill_class}">{status}</span></td></tr>'
+        st.markdown(table_html + '</tbody></table></div>', unsafe_allow_html=True)
