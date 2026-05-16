@@ -105,4 +105,24 @@ Provide:
 
 Format as a table-based risk register.
 """
+    # ... (Keep all your existing code in services/ai_service.py) ...
+
+def generate_training_module(clause: str, doc_context: str, assessment_type: str) -> str:
+    prompt = f"""You are an expert Corporate Trainer specializing in Aerospace Quality Systems (AS9100 Rev D).
+
+Create a highly professional training module for employees.
+FOCUS STANDARD / CLAUSE: {clause}
+ASSESSMENT TYPE: {assessment_type}
+
+REFERENCE INTERNAL PROCEDURE:
+{doc_context[:4000]}
+
+Include:
+1. **Learning Objectives** — What will the employee learn?
+2. **Core Procedure Summary** — Translate the procedure into plain, easy-to-understand language.
+3. **Key Compliance Rules** — What are the absolute "Must-Do's" for AS9100.
+4. **The Assessment** — Generate the {assessment_type} to test their knowledge.
+
+Format in clean, engaging Markdown.
+"""
     return ask_groq(prompt)
