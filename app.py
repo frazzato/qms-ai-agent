@@ -191,11 +191,60 @@ doc_data, raw_files = scan_documents()
 def render_dashboard(doc_data):
     st.markdown("""
     <style>
+    /* Hero & Structure */
     .enterprise-hero { padding: 2rem; border-radius: 8px; background-color: rgba(26, 115, 232, 0.05); border: 1px solid rgba(26, 115, 232, 0.2); border-left: 6px solid #1a73e8; margin-bottom: 2rem; }
     .hero-title { margin-top: 0; margin-bottom: 0.5rem; font-size: 1.75rem; font-weight: 600; }
     .hero-subtitle { font-size: 1rem; opacity: 0.8; max-width: 700px; line-height: 1.5; }
     .badge { display: inline-block; background-color: #e6f4ea; color: #137333; padding: 4px 10px; border-radius: 16px; font-size: 0.75rem; font-weight: 600; margin-bottom: 1rem; }
     .section-header { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; margin-top: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(128, 128, 128, 0.2); }
+    
+    /* NEW: Enterprise Table Styling */
+    .enterprise-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        margin-top: 1rem;
+        margin-bottom: 2rem;
+    }
+    .enterprise-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: inherit;
+        font-size: 0.88rem;
+        text-align: left;
+    }
+    .enterprise-table th {
+        background-color: rgba(26, 115, 232, 0.08);
+        color: #1a73e8;
+        font-weight: 600;
+        padding: 12px 16px;
+        border-bottom: 2px solid rgba(26, 115, 232, 0.2);
+        white-space: nowrap;
+    }
+    .enterprise-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(128, 128, 128, 0.1);
+        color: inherit;
+        vertical-align: middle;
+    }
+    .enterprise-table tr:hover {
+        background-color: rgba(128, 128, 128, 0.05);
+    }
+    
+    /* NEW: Status Pills */
+    .status-pill {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+    .pill-active { background-color: #e6f4ea; color: #137333; }
+    .pill-review { background-color: #fef7e0; color: #b06000; }
+    .pill-overdue { background-color: #fce8e6; color: #c5221f; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -277,26 +326,54 @@ def render_dashboard(doc_data):
                 st.session_state.active_tab = "Training Hub"
                 st.rerun()
 
+    # --- REPLACED: NEW ENTERPRISE HTML TABLE ---
     st.markdown('<div class="section-header">Document Registry</div>', unsafe_allow_html=True)
 
     if not doc_data:
-        st.warning("No documents found! Please place your .docx files in the 'repo' folder.")
+        st.warning("No documents found! Please place your .docx files in the 'docs' folder.")
     else:
-        df = pd.DataFrame(doc_data)
-        st.dataframe(
-            df,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Document ID": st.column_config.TextColumn("ID", width="small"),
-                "Title": st.column_config.TextColumn("Document Title", width="large"),
-                "Revision": st.column_config.TextColumn("Rev", width="small"),
-                "Approved By": st.column_config.TextColumn("Approver", width="medium"),
-                "Approval Date": st.column_config.TextColumn("Approved On", width="medium"),
-                "Next Review": st.column_config.TextColumn("Next Review", width="medium"),
-                "Status": st.column_config.TextColumn("Status", width="medium"),
-            },
-        )
+        table_html = '<div class="enterprise-table-wrapper"><table class="enterprise-table">'
+        table_html += '''
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Document Title</th>
+                <th>Format</th>
+                <th>Rev</th>
+                <th>Approver</th>
+                <th>Approved On</th>
+                <th>Next Review</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+        '''
+        for doc in doc_data:
+            # Determine which color pill to use based on the status
+            status = doc.get("Status", "Active")
+            if status == "Active":
+                pill_class = "pill-active"
+            elif status == "Review Soon":
+                pill_class = "pill-review"
+            else:
+                pill_class = "pill-overdue"
+                
+            table_html += f'''
+            <tr>
+                <td>{doc.get("Document ID", "")}</td>
+                <td style="font-weight: 600;">{doc.get("Title", "")}</td>
+                <td>{doc.get("Format", "")}</td>
+                <td>{doc.get("Revision", "")}</td>
+                <td>{doc.get("Approved By", "")}</td>
+                <td>{doc.get("Approval Date", "")}</td>
+                <td>{doc.get("Next Review", "")}</td>
+                <td><span class="status-pill {pill_class}">{status}</span></td>
+            </tr>
+            '''
+        table_html += '</tbody></table></div>'
+        
+        # Render the custom HTML table
+        st.markdown(table_html, unsafe_allow_html=True)
 
 # ─────────────────────────────────────
 # PAGE 2: AI APPLICATION WORKSPACE
