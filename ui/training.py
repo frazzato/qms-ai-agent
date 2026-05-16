@@ -2,17 +2,15 @@ import os
 import streamlit as st
 from docx import Document
 from config.settings import DOCS_DIR
-from services.ai_service import generate_training_module
+from services.ai_service import ask_groq_json
 
 def _read_repo_docx(filename: str) -> str:
     filepath = os.path.join(DOCS_DIR, filename)
-    if not os.path.exists(filepath): 
-        return ""
+    if not os.path.exists(filepath): return ""
     try:
         doc = Document(filepath)
         return "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
-    except Exception: 
-        return ""
+    except Exception: return ""
 
 def render_training_hub(docx_files, *args, **kwargs):
     st.title("🎓 Smart Training Hub")
@@ -48,9 +46,31 @@ def render_training_hub(docx_files, *args, **kwargs):
                 doc_context = _read_repo_docx(selected_doc)
                 with st.spinner(f"Generating interactive module for {selected_doc}..."):
                     try:
-                        st.session_state.training_data = generate_training_module(selected_doc, doc_context)
+                        # Constructing prompt context dynamically for your custom ask_groq_json handler
+                        prompt = f"""
+                        You are a Senior QMS Trainer specializing in AS9100.
+                        Create a training module for the document titled: {selected_doc}.
+                        
+                        DOCUMENT CONTENT:
+                        {doc_context[:4000]}
+
+                        You MUST return ONLY a valid JSON object.
+                        The JSON MUST have exactly these keys:
+                        "summary": "A detailed 3–5 sentence summary of the document.",
+                        "importance": "A 2–3 sentence explanation of why this document matters for AS9100 compliance.",
+                        "trap": "A realistic audit trap or common nonconformity related to this document.",
+                        "question": "A clear multiple-choice question that tests understanding of the document.",
+                        "options": [
+                            "A) First option text",
+                            "B) Second option text",
+                            "C) Third option text",
+                            "D) Fourth option text"
+                        ],
+                        "answer": "The correct option letter (A, B, C, or D)."
+                        """
+                        st.session_state.training_data = ask_groq_json(prompt)
                     except Exception as e:
-                        st.error(f"Failed to generate JSON training block. Error: {e}")
+                        st.error(f"Failed to process Groq JSON format. Error: {e}")
             
             if "training_data" in st.session_state and selected_doc:
                 data = st.session_state.training_data
