@@ -107,22 +107,31 @@ Format as a table-based risk register.
 """
     # ... (Keep all your existing code in services/ai_service.py) ...
 
-def generate_training_module(clause: str, doc_context: str, assessment_type: str) -> str:
-    prompt = f"""You are an expert Corporate Trainer specializing in Aerospace Quality Systems (AS9100 Rev D).
+def generate_checklist(clause: str, process_area: str = "", doc_context: str = "") -> str:
+    """
+    Generate an internal audit checklist strictly tied to the requested clause.
+    Explicitly handles background document context to prevent topic drift.
+    """
+    prompt = f"""You are an elite AS9100 Rev D and ISO 9001:2015 Lead Auditor.
 
-Create a highly professional training module for employees.
-FOCUS STANDARD / CLAUSE: {clause}
-ASSESSMENT TYPE: {assessment_type}
+CRITICAL ASSIGNMENT DIRECTIONS:
+You MUST generate an internal audit checklist explicitly for the target standard clause listed below. 
+Do NOT let the "Reference Internal Procedure Context" drift your focus to a different standard chapter. The target clause is your absolute rule.
 
-REFERENCE INTERNAL PROCEDURE:
-{doc_context[:4000]}
+TARGET CLAUSE TO AUDIT: 
+{clause}
 
-Include:
-1. **Learning Objectives** — What will the employee learn?
-2. **Core Procedure Summary** — Translate the procedure into plain, easy-to-understand language.
-3. **Key Compliance Rules** — What are the absolute "Must-Do's" for AS9100.
-4. **The Assessment** — Generate the {assessment_type} to test their knowledge.
+{'TARGET PROCESS AREA: ' + process_area if process_area else ''}
 
-Format in clean, engaging Markdown.
+REFERENCE INTERNAL PROCEDURE CONTEXT (IF AVAILABLE):
+{doc_context[:3000]}
+
+For each checklist item generated, include:
+1. Specific Audit Question to ask.
+2. What exact Objective Evidence to look for (records, fields, layout data).
+3. Explicit sub-clause mapping reference.
+4. Clear Pass/Fail/OFI validation criteria.
+
+Format as a numbered checklist structured cleanly for a formal internal audit report.
 """
     return ask_groq(prompt)
