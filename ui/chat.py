@@ -38,10 +38,20 @@ def render_ai_application(docx_files, *args, **kwargs):
         mode = st.selectbox("Select AI Module", ["📋 Gap Analysis", "🛠️ CAPA Generator", "✅ Checklist Builder", "⚠️ Risk Assessment", "💬 Ask Anything"])
         st.write("")
 
+        # Variables initialized to avoid any NameErrors down the line
+        selected_doc = None
+        related_doc = "— None —"
+        ref_doc = "— None —"
+        risk_doc = None
+        finding = ""
+        clause = ""
+        process_area = ""
+        final_process_text = ""
+        final_context_text = ""
+
         if mode == "📋 Gap Analysis":
             if not docx_files:
                 st.warning("No documents found in repository.")
-                selected_doc = None
             else:
                 selected_doc = st.selectbox("Select Document:", docx_files, format_func=lambda f: f"📄 {f}")
             standard = st.selectbox("Standard:", ["AS9100 Rev D", "ISO 9001:2015", "Both"])
@@ -67,13 +77,17 @@ def render_ai_application(docx_files, *args, **kwargs):
             if input_method == "📄 Select from Repository":
                 if not docx_files:
                     st.warning("No documents found in repository.")
-                    risk_doc = None
                 else:
                     risk_doc = st.selectbox("Select Document:", docx_files, format_func=lambda f: f"📄 {f}")
-                context_input = st.text_area("Additional Context (optional):", height=80, key="risk_ctx_repo")
+                final_context_text = st.text_area("Additional Context (optional):", height=80, key="risk_ctx_repo")
+                
+                if risk_doc:
+                    final_process_text = f"Based on {risk_doc}:\n{_read_repo_docx(risk_doc)[:4000]}"
             else:
-                process_input = st.text_input("Process / Activity:", placeholder="e.g. First Article Inspection", key="risk_proc_manual")
-                context_input = st.text_area("Additional Context (optional):", height=80, key="risk_ctx_manual")
+                manual_proc = st.text_input("Process / Activity:", placeholder="e.g. First Article Inspection", key="risk_proc_manual")
+                final_context_text = st.text_area("Additional Context (optional):", height=80, key="risk_ctx_manual")
+                final_process_text = manual_proc
+                
             st.write("")
             run_engine = st.button("Assess Risk ⚠️", type="primary", use_container_width=True)
             
@@ -165,27 +179,20 @@ def render_ai_application(docx_files, *args, **kwargs):
                         st.error(f"Groq API Error: {str(e)}")
 
             # ──────────────────────────────────────────
-            # MODE 5: RISK ASSESSMENT (FIXED & ALIGNED)
+            # MODE 5: RISK ASSESSMENT (FIXED & LOGICALLY ALIGNED)
             # ──────────────────────────────────────────
             elif mode == "⚠️ Risk Assessment" and run_engine:
-                final_process_text = ""
-                if input_method == "📄 Select from Repository":
-                    if not risk_doc:
-                        st.error("No document selected.")
-                    else:
-                        final_process_text = f"Based on {risk_doc}:\n{_read_repo_docx(risk_doc)[:4000]}"
+                if not final_process_text:
+                    st.error("Please provide process data or select a valid document.")
                 else:
-                    final_process_text = process_input
-                
-                if final_process_text:
                     with st.spinner("Running AS9100 Risk Engine..."):
                         try:
-                            # Standardized variable names to guarantee clean handover to your backend function
-                            result = assess_risk(final_process_text, context_input)
+                            # Passes pre-sorted clean inputs safely without scope problems
+                            result = assess_risk(final_process_text, final_context_text)
                             if result:
                                 st.markdown(result)
                             else:
-                                st.error("The risk engine completed but returned empty text. Check your API limits.")
+                                st.error("The risk engine completed but returned empty text.")
                         except Exception as e:
                             st.error(f"Groq API Engine Call Failed: {str(e)}")
             
