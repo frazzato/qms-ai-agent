@@ -12,13 +12,8 @@ from ui.dashboard import render_dashboard
 from ui.chat import render_ai_application
 from ui.training import render_training_hub
 
-# 2. IMPORT CONFIG & SAFELY CHECK FOR SERVICES
+# 2. IMPORT CONFIG
 from config.settings import DOCS_DIR
-
-try:
-    from services.ai_service import _extract_docx_metadata
-except ImportError:
-    _extract_docx_metadata = None
 
 st.set_page_config(page_title="QMS System", layout="wide")
 
@@ -27,7 +22,6 @@ if "active_tab" not in st.session_state:
 
 REVIEW_CYCLE_MONTHS = 6
 
-# Helper to safely calculate status
 def _calculate_status(next_review: datetime.date) -> str:
     days_until = (next_review - datetime.date.today()).days
     if days_until < 0: return "Overdue"
@@ -59,18 +53,15 @@ def scan_documents():
         else: 
             doc_id, title = "N/A", name_no_ext
 
-        # Set fallback modification date
         stat = os.stat(filepath)
         file_mod_date = datetime.date.fromtimestamp(stat.st_mtime)
 
-        # Read layout data from within docx tables if possible
         revision = "—"
         approved_by = "—"
         approval_date = file_mod_date
 
         try:
             doc = Document(filepath)
-            # Basic fallback extraction from paragraphs if metadata service isn't active
             for table in doc.tables:
                 if len(table.rows) >= 2:
                     for row in table.rows:
@@ -98,7 +89,6 @@ def scan_documents():
         })
     return docs, files
 
-# Fetch data using your full scanner pipeline
 doc_data, available_files = scan_documents()
 
 # ─────────────────────────────────────
@@ -109,10 +99,11 @@ def main():
         st.title("☁️ QMS System")
         st.write("---")
         
+        # CHANGED: "Audit Workspace" updated to "AI Capabilities"
         selected = st.radio(
             "Navigation",
-            ["Dashboard", "Audit Workspace", "Training Hub"],
-            index=["Dashboard", "Audit Workspace", "Training Hub"].index(st.session_state.active_tab),
+            ["Dashboard", "AI Capabilities", "Training Hub"],
+            index=["Dashboard", "AI Capabilities", "Training Hub"].index(st.session_state.active_tab),
             label_visibility="hidden"
         )
         
@@ -121,14 +112,13 @@ def main():
             st.rerun()
 
         st.write("---")
-        st.caption(f"System Health: **98%**")
+        st.caption("System Health: **98%**")
         st.caption(f"Last Sync: {time.strftime('%H:%M')} CDT")
 
-    # Route traffic with correct matching structures
     if st.session_state.active_tab == "Dashboard":
         render_dashboard(doc_data) 
     
-    elif st.session_state.active_tab == "Audit Workspace":
+    elif st.session_state.active_tab == "AI Capabilities":
         render_ai_application(available_files)
     
     elif st.session_state.active_tab == "Training Hub":
