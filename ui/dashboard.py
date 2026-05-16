@@ -62,7 +62,7 @@ def render_dashboard(doc_data):
         display: grid;
         grid-template-columns: repeat(5, 1fr);
         gap: 0.8rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 0.5rem; /* Reduced to pull buttons closer */
     }
     @media (max-width: 768px) {
         .ai-grid { grid-template-columns: repeat(2, 1fr); }
@@ -74,8 +74,8 @@ def render_dashboard(doc_data):
         padding: 1.4rem 1rem;
         text-align: center;
         transition: all 0.3s ease;
-        cursor: pointer;
         position: relative;
+        /* Removed cursor: pointer to prevent false clickability */
     }
     .ai-module:hover {
         border-color: rgba(59,130,246,0.4);
@@ -117,6 +117,23 @@ def render_dashboard(doc_data):
         padding: 0.15rem 0.45rem;
         border-radius: 6px;
         letter-spacing: 0.05em;
+    }
+
+    /* ── Custom Streamlit Button Styling ── */
+    div[data-testid="stButton"] button {
+        background-color: rgba(30, 41, 59, 0.5);
+        color: #94a3b8;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+    }
+    div[data-testid="stButton"] button:hover {
+        background-color: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        border-color: rgba(59, 130, 246, 0.5);
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
     }
 
     /* ── Neon KPI ── */
@@ -230,7 +247,7 @@ def render_dashboard(doc_data):
     """, unsafe_allow_html=True)
 
     # ─────────────────────────────────────
-    # AI MODULES SHOWCASE
+    # AI MODULES SHOWCASE (HTML Displays)
     # ─────────────────────────────────────
     st.markdown("""
     <div class="section-glow">
@@ -238,10 +255,11 @@ def render_dashboard(doc_data):
     </div>
     """, unsafe_allow_html=True)
 
+    # NOTE: Removed 'onclick="void(0)"' from all cards
     st.markdown("""
     <div class="ai-grid">
 
-        <div class="ai-module" onclick="void(0)">
+        <div class="ai-module">
             <div class="ai-module-icon" style="background:rgba(59,130,246,0.12);">
                 📋
             </div>
@@ -249,7 +267,7 @@ def render_dashboard(doc_data):
             <div class="ai-module-desc">Clause coverage mapping against AS9100 & ISO 9001</div>
         </div>
 
-        <div class="ai-module featured" onclick="void(0)">
+        <div class="ai-module featured">
             <div class="new-badge">NEW</div>
             <div class="ai-module-icon" style="background:rgba(239,68,68,0.12);">
                 🛠️
@@ -258,7 +276,7 @@ def render_dashboard(doc_data):
             <div class="ai-module-desc">Root cause analysis & corrective action reports</div>
         </div>
 
-        <div class="ai-module" onclick="void(0)">
+        <div class="ai-module">
             <div class="ai-module-icon" style="background:rgba(34,197,94,0.12);">
                 ✅
             </div>
@@ -266,7 +284,7 @@ def render_dashboard(doc_data):
             <div class="ai-module-desc">Auto-generated internal audit checklists by clause</div>
         </div>
 
-        <div class="ai-module" onclick="void(0)">
+        <div class="ai-module">
             <div class="new-badge">NEW</div>
             <div class="ai-module-icon" style="background:rgba(245,158,11,0.12);">
                 ⚠️
@@ -275,7 +293,7 @@ def render_dashboard(doc_data):
             <div class="ai-module-desc">Likelihood × severity matrix with mitigations</div>
         </div>
 
-        <div class="ai-module" onclick="void(0)">
+        <div class="ai-module">
             <div class="ai-module-icon" style="background:rgba(139,92,246,0.12);">
                 🎓
             </div>
@@ -286,14 +304,16 @@ def render_dashboard(doc_data):
     </div>
     """, unsafe_allow_html=True)
 
-    # ── Clickable buttons below the showcase ──
+    # ─────────────────────────────────────
+    # NATIVE STREAMLIT BUTTONS (The actual triggers)
+    # ─────────────────────────────────────
     b1, b2, b3, b4, b5 = st.columns(5)
     with b1:
-        if st.button("Open Gap Analysis", key="dash_gap", use_container_width=True):
+        if st.button("Launch Analysis", key="dash_gap", use_container_width=True):
             st.session_state.active_tab = "Audit"
             st.rerun()
     with b2:
-        if st.button("Open CAPA", key="dash_capa", use_container_width=True):
+        if st.button("Generate CAPA", key="dash_capa", use_container_width=True):
             st.session_state.active_tab = "Audit"
             st.rerun()
     with b3:
@@ -301,11 +321,11 @@ def render_dashboard(doc_data):
             st.session_state.active_tab = "Audit"
             st.rerun()
     with b4:
-        if st.button("Open Risk", key="dash_risk", use_container_width=True):
+        if st.button("View Matrix", key="dash_risk", use_container_width=True):
             st.session_state.active_tab = "Audit"
             st.rerun()
     with b5:
-        if st.button("Open Training", key="dash_train", use_container_width=True):
+        if st.button("Start Training", key="dash_train", use_container_width=True):
             st.session_state.active_tab = "Training"
             st.rerun()
 
@@ -323,7 +343,7 @@ def render_dashboard(doc_data):
     def count_status(keyword):
         if not doc_data:
             return 0
-        return sum(1 for d in doc_data
+        return sum(1 for d in doc_data 
                    if keyword.lower() in str(d.get("Status", "")).lower())
 
     active  = count_status("active")
@@ -371,7 +391,7 @@ def render_dashboard(doc_data):
         </div>
         <div class="health-bar-track">
             <div class="health-bar-fill"
-                 style="width:{health}%;
+                 style="width:{health}%; 
                         background:linear-gradient(90deg,{bar_color},#3b82f6);">
             </div>
         </div>
