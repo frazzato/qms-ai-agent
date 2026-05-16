@@ -12,10 +12,14 @@ from services.ai_service import (
 def _read_repo_docx(filename: str) -> str:
     """Read text from a .docx file in the docs/ repository ONLY."""
     filepath = os.path.join(DOCS_DIR, filename)
-    if not os.path.exists(filepath): return ""
+    if not os.path.exists(filepath): 
+        return ""
+    
     real_path = os.path.realpath(filepath)
     repo_path = os.path.realpath(DOCS_DIR)
-    if not real_path.startswith(repo_path): return ""
+    if not real_path.startswith(repo_path): 
+        return ""
+    
     try:
         doc = Document(filepath)
         return "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
@@ -23,7 +27,8 @@ def _read_repo_docx(filename: str) -> str:
         return ""
 
 def _get_docx_files() -> list:
-    if not os.path.exists(DOCS_DIR): return []
+    if not os.path.exists(DOCS_DIR): 
+        return []
     return [f for f in os.listdir(DOCS_DIR) if f.lower().endswith(".docx")]
 
 def render_ai_application(*args, **kwargs):
@@ -82,9 +87,14 @@ def render_ai_application(*args, **kwargs):
         st.markdown("### 📊 Output Generation")
         with st.container(border=True, height=650):
             
+            # ──────────────────────────────────────────
+            # MODE 1: ASK ANYTHING (FIXED)
+            # ──────────────────────────────────────────
             if mode == "💬 Ask Anything":
                 if "audit_messages" not in st.session_state:
                     st.session_state.audit_messages = [{"role": "assistant", "content": "Hello — I'm your **AS9100 / ISO 9001 Audit Agent**. Ask me anything."}]
+                
+                # Render Chat History
                 st.markdown('<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:0.5rem; margin-bottom:1rem; height:450px; overflow-y:auto;">', unsafe_allow_html=True)
                 for msg in st.session_state.audit_messages:
                     is_user = msg["role"] == "user"
@@ -94,41 +104,79 @@ def render_ai_application(*args, **kwargs):
                     st.markdown(f'<div style="display:flex; justify-content:{"flex-end" if is_user else "flex-start"}; margin:0.6rem 0.5rem;"><div style="display:flex; align-items:flex-start; gap:0.5rem; max-width:80%; flex-direction:{direction};"><div style="background:{bg}; color:{fg}; border-radius:14px; padding:0.8rem 1rem; box-shadow:0 1px 3px rgba(0,0,0,0.06);">{msg["content"]}</div></div></div>', unsafe_allow_html=True)
                 st.markdown("</div>", unsafe_allow_html=True)
 
-                user_input = st.chat_input("Ask the audit agent…")
-                if user_input:
+                # Reverted to your original text_input so it doesn't crash inside the column
+                col_input, col_btn = st.columns([6, 1])
+                with col_input:
+                    user_input = st.text_input("Ask the audit agent…", label_visibility="collapsed", key="chat_input_box")
+                with col_btn:
+                    send = st.button("Send ➤", use_container_width=True, type="primary")
+
+                if send and user_input:
                     st.session_state.audit_messages.append({"role": "user", "content": user_input})
                     with st.spinner("Analyzing compliance standards..."):
-                        response = ask_groq(f"You are an elite AS9100 QMS Auditor. Answer: {user_input}")
-                    st.session_state.audit_messages.append({"role": "assistant", "content": response})
+                        try:
+                            response = ask_groq(f"You are an elite AS9100 QMS Auditor. Answer: {user_input}")
+                            st.session_state.audit_messages.append({"role": "assistant", "content": response})
+                        except Exception as e:
+                            st.error(f"Groq API Error: {str(e)}")
                     st.rerun()
 
+            # ──────────────────────────────────────────
+            # MODE 2: GAP ANALYSIS
+            # ──────────────────────────────────────────
             elif mode == "📋 Gap Analysis" and run_engine:
                 doc_text = _read_repo_docx(selected_doc)
                 with st.spinner(f"Analyzing {selected_doc}..."):
-                    result = analyze_gaps(doc_text, standard)
-                st.markdown(result)
+                    try:
+                        result = analyze_gaps(doc_text, standard)
+                        st.markdown(result)
+                    except Exception as e:
+                        st.error(f"Groq API Error: {str(e)}")
 
+            # ──────────────────────────────────────────
+            # MODE 3: CAPA GENERATOR
+            # ──────────────────────────────────────────
             elif mode == "🛠️ CAPA Generator" and run_engine:
                 doc_context = ""
                 if related_doc != "— None —":
                     doc_context = f"\n\nRELATED DOCUMENT:\n{_read_repo_docx(related_doc)[:3000]}"
                 with st.spinner("Generating corrective actions..."):
-                    result = generate_capa(finding + doc_context, clause)
-                st.markdown(result)
+                    try:
+                        result = generate_capa(finding + doc_context, clause)
+                        st.markdown(result)
+                    except Exception as e:
+                        st.error(f"Groq API Error: {str(e)}")
 
+            # ──────────────────────────────────────────
+            # MODE 4: CHECKLIST BUILDER
+            # ──────────────────────────────────────────
             elif mode == "✅ Checklist Builder" and run_engine:
                 doc_context = ""
                 if ref_doc != "— None —":
                     doc_context = f"\n\nBASED ON:\n{_read_repo_docx(ref_doc)[:3000]}"
                 with st.spinner("Building audit checklist..."):
-                    result = generate_checklist(clause + doc_context, process_area)
-                st.markdown(result)
+                    try:
+                        result = generate_checklist(clause + doc_context, process_area)
+                        st.markdown(result)
+                    except Exception as e:
+                        st.error(f"Groq API Error: {str(e)}")
 
+            # ──────────────────────────────────────────
+            # MODE 5: RISK ASSESSMENT
+            # ──────────────────────────────────────────
             elif mode == "⚠️ Risk Assessment" and run_engine:
                 if input_method == "📄 Select from Repository":
                     process_text = f"Based on {risk_doc}:\n{_read_repo_docx(risk_doc)[:4000]}"
                 else:
                     process_text = process
+                
                 with st.spinner("Analyzing risks..."):
-                    result = assess_risk(process_text, context)
-                st.markdown(result)
+                    try:
+                        result = assess_risk(process_text, context)
+                        st.markdown(result)
+                    except Exception as e:
+                        st.error(f"Groq API Error: {str(e)}")
+            
+            # Idle state
+            elif not run_engine and mode != "💬 Ask Anything":
+                st.info("Awaiting input... Select a tool on the left, provide context, and click the run button.")
