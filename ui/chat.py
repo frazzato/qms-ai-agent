@@ -35,7 +35,7 @@ def render_ai_application(docx_files, *args, **kwargs):
     
     with col_left:
         st.markdown("### ⚙️ Engine Settings")
-        mode = st.selectbox("Select AI Module", ["📋 Gap Analysis", "🛠️ CAPA Generator", "✅ Checklist Builder", "⚠️ Risk Assessment", "💬 Ask Anything"])
+        mode = st.selectbox("Select AI Module", ["📋 Gap Analysis", "🛠️ CAPA Generator", "✅ Checklist Builder", "💬 Ask Anything"])
         st.write("")
 
         # Standard clean fallbacks
