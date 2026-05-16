@@ -26,16 +26,10 @@ def _read_repo_docx(filename: str) -> str:
     except Exception:
         return ""
 
-def _get_docx_files() -> list:
-    if not os.path.exists(DOCS_DIR): 
-        return []
-    return [f for f in os.listdir(DOCS_DIR) if f.lower().endswith(".docx")]
-
-def render_ai_application(*args, **kwargs):
+def render_ai_application(docx_files, *args, **kwargs):
     st.title("🤖 AI Application Workspace")
     st.write("---")
 
-    docx_files = _get_docx_files()
     col_left, col_right = st.columns([1, 2.5])
     run_engine = False
     
@@ -45,7 +39,11 @@ def render_ai_application(*args, **kwargs):
         st.write("")
 
         if mode == "📋 Gap Analysis":
-            selected_doc = st.selectbox("Select Document:", docx_files, format_func=lambda f: f"📄 {f}")
+            if not docx_files:
+                st.warning("No documents found in repository.")
+                selected_doc = None
+            else:
+                selected_doc = st.selectbox("Select Document:", docx_files, format_func=lambda f: f"📄 {f}")
             standard = st.selectbox("Standard:", ["AS9100 Rev D", "ISO 9001:2015", "Both"])
             st.write("")
             run_engine = st.button("Run Gap Analysis 🔍", type="primary", use_container_width=True)
@@ -67,7 +65,11 @@ def render_ai_application(*args, **kwargs):
         elif mode == "⚠️ Risk Assessment":
             input_method = st.radio("Input method:", ["📄 Select from Repository", "✏️ Describe Manually"])
             if input_method == "📄 Select from Repository":
-                risk_doc = st.selectbox("Select Document:", docx_files, format_func=lambda f: f"📄 {f}")
+                if not docx_files:
+                    st.warning("No documents found in repository.")
+                    risk_doc = None
+                else:
+                    risk_doc = st.selectbox("Select Document:", docx_files, format_func=lambda f: f"📄 {f}")
                 context = st.text_area("Additional Context (optional):", height=80)
             else:
                 process = st.text_input("Process / Activity:", placeholder="e.g. First Article Inspection")
@@ -88,13 +90,12 @@ def render_ai_application(*args, **kwargs):
         with st.container(border=True, height=650):
             
             # ──────────────────────────────────────────
-            # MODE 1: ASK ANYTHING (FIXED)
+            # MODE 1: ASK ANYTHING
             # ──────────────────────────────────────────
             if mode == "💬 Ask Anything":
                 if "audit_messages" not in st.session_state:
                     st.session_state.audit_messages = [{"role": "assistant", "content": "Hello — I'm your **AS9100 / ISO 9001 Audit Agent**. Ask me anything."}]
                 
-                # Render Chat History
                 st.markdown('<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:0.5rem; margin-bottom:1rem; height:450px; overflow-y:auto;">', unsafe_allow_html=True)
                 for msg in st.session_state.audit_messages:
                     is_user = msg["role"] == "user"
@@ -104,7 +105,6 @@ def render_ai_application(*args, **kwargs):
                     st.markdown(f'<div style="display:flex; justify-content:{"flex-end" if is_user else "flex-start"}; margin:0.6rem 0.5rem;"><div style="display:flex; align-items:flex-start; gap:0.5rem; max-width:80%; flex-direction:{direction};"><div style="background:{bg}; color:{fg}; border-radius:14px; padding:0.8rem 1rem; box-shadow:0 1px 3px rgba(0,0,0,0.06);">{msg["content"]}</div></div></div>', unsafe_allow_html=True)
                 st.markdown("</div>", unsafe_allow_html=True)
 
-                # Reverted to your original text_input so it doesn't crash inside the column
                 col_input, col_btn = st.columns([6, 1])
                 with col_input:
                     user_input = st.text_input("Ask the audit agent…", label_visibility="collapsed", key="chat_input_box")
@@ -125,13 +125,16 @@ def render_ai_application(*args, **kwargs):
             # MODE 2: GAP ANALYSIS
             # ──────────────────────────────────────────
             elif mode == "📋 Gap Analysis" and run_engine:
-                doc_text = _read_repo_docx(selected_doc)
-                with st.spinner(f"Analyzing {selected_doc}..."):
-                    try:
-                        result = analyze_gaps(doc_text, standard)
-                        st.markdown(result)
-                    except Exception as e:
-                        st.error(f"Groq API Error: {str(e)}")
+                if not selected_doc:
+                    st.error("No document selected.")
+                else:
+                    doc_text = _read_repo_docx(selected_doc)
+                    with st.spinner(f"Analyzing {selected_doc}..."):
+                        try:
+                            result = analyze_gaps(doc_text, standard)
+                            st.markdown(result)
+                        except Exception as e:
+                            st.error(f"Groq API Error: {str(e)}")
 
             # ──────────────────────────────────────────
             # MODE 3: CAPA GENERATOR
@@ -165,18 +168,22 @@ def render_ai_application(*args, **kwargs):
             # MODE 5: RISK ASSESSMENT
             # ──────────────────────────────────────────
             elif mode == "⚠️ Risk Assessment" and run_engine:
+                process_text = ""
                 if input_method == "📄 Select from Repository":
-                    process_text = f"Based on {risk_doc}:\n{_read_repo_docx(risk_doc)[:4000]}"
+                    if not risk_doc:
+                        st.error("No document selected.")
+                    else:
+                        process_text = f"Based on {risk_doc}:\n{_read_repo_docx(risk_doc)[:4000]}"
                 else:
                     process_text = process
                 
-                with st.spinner("Analyzing risks..."):
-                    try:
-                        result = assess_risk(process_text, context)
-                        st.markdown(result)
-                    except Exception as e:
-                        st.error(f"Groq API Error: {str(e)}")
+                if process_text:
+                    with st.spinner("Analyzing risks..."):
+                        try:
+                            result = assess_risk(process_text, context)
+                            st.markdown(result)
+                        except Exception as e:
+                            st.error(f"Groq API Error: {str(e)}")
             
-            # Idle state
-            elif not run_engine and mode != "💬 Ask Anything":
+            elif not run_engine:
                 st.info("Awaiting input... Select a tool on the left, provide context, and click the run button.")
