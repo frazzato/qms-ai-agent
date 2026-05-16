@@ -12,9 +12,13 @@ from ui.dashboard import render_dashboard
 from ui.chat import render_ai_application
 from ui.training import render_training_hub
 
-# 2. IMPORT CONFIG & YOUR AI FUNCTIONS
+# 2. IMPORT CONFIG & SAFELY CHECK FOR SERVICES
 from config.settings import DOCS_DIR
-from services.ai_service import _extract_docx_metadata if 'services.ai_service' in globals() else None
+
+try:
+    from services.ai_service import _extract_docx_metadata
+except ImportError:
+    _extract_docx_metadata = None
 
 st.set_page_config(page_title="QMS System", layout="wide")
 
