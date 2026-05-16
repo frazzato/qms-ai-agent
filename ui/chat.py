@@ -70,10 +70,10 @@ def render_ai_application(docx_files, *args, **kwargs):
                     risk_doc = None
                 else:
                     risk_doc = st.selectbox("Select Document:", docx_files, format_func=lambda f: f"📄 {f}")
-                context = st.text_area("Additional Context (optional):", height=80)
+                context_input = st.text_area("Additional Context (optional):", height=80, key="risk_ctx_repo")
             else:
-                process = st.text_input("Process / Activity:", placeholder="e.g. First Article Inspection")
-                context = st.text_area("Additional Context (optional):", height=80)
+                process_input = st.text_input("Process / Activity:", placeholder="e.g. First Article Inspection", key="risk_proc_manual")
+                context_input = st.text_area("Additional Context (optional):", height=80, key="risk_ctx_manual")
             st.write("")
             run_engine = st.button("Assess Risk ⚠️", type="primary", use_container_width=True)
             
@@ -165,25 +165,29 @@ def render_ai_application(docx_files, *args, **kwargs):
                         st.error(f"Groq API Error: {str(e)}")
 
             # ──────────────────────────────────────────
-            # MODE 5: RISK ASSESSMENT
+            # MODE 5: RISK ASSESSMENT (FIXED & ALIGNED)
             # ──────────────────────────────────────────
             elif mode == "⚠️ Risk Assessment" and run_engine:
-                process_text = ""
+                final_process_text = ""
                 if input_method == "📄 Select from Repository":
                     if not risk_doc:
                         st.error("No document selected.")
                     else:
-                        process_text = f"Based on {risk_doc}:\n{_read_repo_docx(risk_doc)[:4000]}"
+                        final_process_text = f"Based on {risk_doc}:\n{_read_repo_docx(risk_doc)[:4000]}"
                 else:
-                    process_text = process
+                    final_process_text = process_input
                 
-                if process_text:
-                    with st.spinner("Analyzing risks..."):
+                if final_process_text:
+                    with st.spinner("Running AS9100 Risk Engine..."):
                         try:
-                            result = assess_risk(process_text, context)
-                            st.markdown(result)
+                            # Standardized variable names to guarantee clean handover to your backend function
+                            result = assess_risk(final_process_text, context_input)
+                            if result:
+                                st.markdown(result)
+                            else:
+                                st.error("The risk engine completed but returned empty text. Check your API limits.")
                         except Exception as e:
-                            st.error(f"Groq API Error: {str(e)}")
+                            st.error(f"Groq API Engine Call Failed: {str(e)}")
             
             elif not run_engine:
                 st.info("Awaiting input... Select a tool on the left, provide context, and click the run button.")
