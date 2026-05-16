@@ -163,19 +163,26 @@ def render_ai_application(docx_files, *args, **kwargs):
                         st.error(f"Groq API Error: {str(e)}")
 
             # ──────────────────────────────────────────
-            # MODE 4: CHECKLIST BUILDER
-            # ──────────────────────────────────────────
-            elif mode == "✅ Checklist Builder" and run_engine:
-                doc_context = ""
-                if ref_doc != "— None —":
-                    doc_context = f"\n\nBASED ON:\n{_read_repo_docx(ref_doc)[:3000]}"
-                with st.spinner("Building audit checklist..."):
-                    try:
-                        result = generate_checklist(clause + doc_context, process_area)
-                        st.markdown(result)
-                    except Exception as e:
-                        st.error(f"Groq API Error: {str(e)}")
-
+# MODE 4: CHECKLIST BUILDER (FIXED CONTEXT DRIFT)
+# ──────────────────────────────────────────
+elif mode == "✅ Checklist Builder" and run_engine:
+    final_doc_context = ""
+    if ref_doc != "— None —":
+        # Read the file text cleanly into its own separate variable
+        final_doc_context = _read_repo_docx(ref_doc)
+    
+    with st.spinner("Building targeted audit checklist..."):
+        try:
+            # CRITICAL: Pass parameters explicitly as named keyword arguments
+            # This stops Python from combining them or mixing up their positions!
+            result = generate_checklist(
+                clause=clause, 
+                process_area=process_area, 
+                doc_context=final_doc_context
+            )
+            st.markdown(result)
+        except Exception as e:
+            st.error(f"Groq API Error: {str(e)}")
             # ──────────────────────────────────────────
             # MODE 5: RISK ASSESSMENT (SIMPLIFIED & CLEAN)
             # ──────────────────────────────────────────
