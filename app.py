@@ -22,7 +22,7 @@ if "active_tab" not in st.session_state:
 # ─────────────────────────────────────
 # YOUR CUSTOM QMS PARSING ENGINE
 # ─────────────────────────────────────
-DOCS_DIR = "repo" # Make sure you have a folder named 'repo' with your .docx files
+DOCS_DIR = "docs" # Make sure you have a folder named 'repo' with your .docx files
 REVIEW_CYCLE_MONTHS = 6
 
 def _is_key_value_table(rows) -> bool:
