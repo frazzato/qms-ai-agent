@@ -6,7 +6,7 @@ from config.settings import DOCS_DIR
 # Import YOUR custom AI functions
 from services.ai_service import (
     ask_groq, analyze_gaps, generate_capa,
-    generate_checklist, assess_risk
+    generate_checklist
 )
 
 def _read_repo_docx(filename: str) -> str:
@@ -35,19 +35,16 @@ def render_ai_application(docx_files, *args, **kwargs):
     
     with col_left:
         st.markdown("### ⚙️ Engine Settings")
+        # Dropdown options matching your clean 4-module layout
         mode = st.selectbox("Select AI Module", ["📋 Gap Analysis", "🛠️ CAPA Generator", "✅ Checklist Builder", "💬 Ask Anything"])
         st.write("")
 
-        # Standard clean fallbacks
         selected_doc = None
         related_doc = "— None —"
         ref_doc = "— None —"
-        risk_doc = None
         finding = ""
         clause = ""
         process_area = ""
-        final_process_text = ""
-        final_context_text = ""
 
         if mode == "📋 Gap Analysis":
             if not docx_files:
@@ -66,28 +63,11 @@ def render_ai_application(docx_files, *args, **kwargs):
             run_engine = st.button("Generate CAPA 🛠️", type="primary", use_container_width=True)
 
         elif mode == "✅ Checklist Builder":
-            clause = st.text_input("Clause or Topic:", placeholder="e.g. 8.5.1 Control of Production")
+            clause = st.text_input("Clause or Topic:", placeholder="e.g. 5.2.1 Establishing the quality policy")
             process_area = st.text_input("Process Area (optional):")
             ref_doc = st.selectbox("Reference Document (optional):", ["— None —"] + docx_files, format_func=lambda f: f"📄 {f}" if f != "— None —" else f)
             st.write("")
             run_engine = st.button("Generate Checklist ✅", type="primary", use_container_width=True)
-
-        elif mode == "⚠️ Risk Assessment":
-            # REMOVED MANUAL SELECTION: Locked straight into the stable repository loop
-            if not docx_files:
-                st.warning("No documents found in repository to assess.")
-            else:
-                risk_doc = st.selectbox("Select Document to Assess:", docx_files, format_func=lambda f: f"📄 {f}")
-                final_context_text = st.text_area("Additional Operational Context (optional):", height=100, key="risk_ctx_repo")
-                
-                if risk_doc:
-                    final_process_text = f"Based on {risk_doc}:\n{_read_repo_docx(risk_doc)[:4000]}"
-            
-            st.write("")
-            if risk_doc:
-                run_engine = st.button("Assess Risk ⚠️", type="primary", use_container_width=True)
-            else:
-                st.button("Assess Risk ⚠️", type="primary", use_container_width=True, disabled=True)
             
         elif mode == "💬 Ask Anything":
             st.info("The Chat interface is active in the main workspace.")
@@ -163,42 +143,24 @@ def render_ai_application(docx_files, *args, **kwargs):
                         st.error(f"Groq API Error: {str(e)}")
 
             # ──────────────────────────────────────────
-# MODE 4: CHECKLIST BUILDER (FIXED CONTEXT DRIFT)
-# ──────────────────────────────────────────
-elif mode == "✅ Checklist Builder" and run_engine:
-    final_doc_context = ""
-    if ref_doc != "— None —":
-        # Read the file text cleanly into its own separate variable
-        final_doc_context = _read_repo_docx(ref_doc)
-    
-    with st.spinner("Building targeted audit checklist..."):
-        try:
-            # CRITICAL: Pass parameters explicitly as named keyword arguments
-            # This stops Python from combining them or mixing up their positions!
-            result = generate_checklist(
-                clause=clause, 
-                process_area=process_area, 
-                doc_context=final_doc_context
-            )
-            st.markdown(result)
-        except Exception as e:
-            st.error(f"Groq API Error: {str(e)}")
+            # MODE 4: CHECKLIST BUILDER (FIXED)
             # ──────────────────────────────────────────
-            # MODE 5: RISK ASSESSMENT (SIMPLIFIED & CLEAN)
-            # ──────────────────────────────────────────
-            elif mode == "⚠️ Risk Assessment" and run_engine:
-                if not final_process_text:
-                    st.error("No text extracted from the document repository.")
-                else:
-                    with st.spinner("Running AS9100 Risk Engine..."):
-                        try:
-                            result = assess_risk(final_process_text, final_context_text)
-                            if result:
-                                st.markdown(result)
-                            else:
-                                st.error("The risk engine completed but returned empty text.")
-                        except Exception as e:
-                            st.error(f"Groq API Engine Call Failed: {str(e)}")
+            elif mode == "✅ Checklist Builder" and run_engine:
+                final_doc_context = ""
+                if ref_doc != "— None —":
+                    final_doc_context = _read_repo_docx(ref_doc)
+                
+                with st.spinner("Building targeted audit checklist..."):
+                    try:
+                        # Named arguments matching the updated services/ai_service.py signature
+                        result = generate_checklist(
+                            clause=clause, 
+                            process_area=process_area, 
+                            doc_context=final_doc_context
+                        )
+                        st.markdown(result)
+                    except Exception as e:
+                        st.error(f"Groq API Error: {str(e)}")
             
             elif not run_engine:
                 st.info("Awaiting input... Select a tool on the left, provide context, and click the run button.")
