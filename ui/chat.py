@@ -38,7 +38,7 @@ def render_ai_application(docx_files, *args, **kwargs):
         mode = st.selectbox("Select AI Module", ["📋 Gap Analysis", "🛠️ CAPA Generator", "✅ Checklist Builder", "⚠️ Risk Assessment", "💬 Ask Anything"])
         st.write("")
 
-        # Variables initialized to avoid any NameErrors down the line
+        # Standard clean fallbacks
         selected_doc = None
         related_doc = "— None —"
         ref_doc = "— None —"
@@ -73,23 +73,21 @@ def render_ai_application(docx_files, *args, **kwargs):
             run_engine = st.button("Generate Checklist ✅", type="primary", use_container_width=True)
 
         elif mode == "⚠️ Risk Assessment":
-            input_method = st.radio("Input method:", ["📄 Select from Repository", "✏️ Describe Manually"])
-            if input_method == "📄 Select from Repository":
-                if not docx_files:
-                    st.warning("No documents found in repository.")
-                else:
-                    risk_doc = st.selectbox("Select Document:", docx_files, format_func=lambda f: f"📄 {f}")
-                final_context_text = st.text_area("Additional Context (optional):", height=80, key="risk_ctx_repo")
+            # REMOVED MANUAL SELECTION: Locked straight into the stable repository loop
+            if not docx_files:
+                st.warning("No documents found in repository to assess.")
+            else:
+                risk_doc = st.selectbox("Select Document to Assess:", docx_files, format_func=lambda f: f"📄 {f}")
+                final_context_text = st.text_area("Additional Operational Context (optional):", height=100, key="risk_ctx_repo")
                 
                 if risk_doc:
                     final_process_text = f"Based on {risk_doc}:\n{_read_repo_docx(risk_doc)[:4000]}"
-            else:
-                manual_proc = st.text_input("Process / Activity:", placeholder="e.g. First Article Inspection", key="risk_proc_manual")
-                final_context_text = st.text_area("Additional Context (optional):", height=80, key="risk_ctx_manual")
-                final_process_text = manual_proc
-                
+            
             st.write("")
-            run_engine = st.button("Assess Risk ⚠️", type="primary", use_container_width=True)
+            if risk_doc:
+                run_engine = st.button("Assess Risk ⚠️", type="primary", use_container_width=True)
+            else:
+                st.button("Assess Risk ⚠️", type="primary", use_container_width=True, disabled=True)
             
         elif mode == "💬 Ask Anything":
             st.info("The Chat interface is active in the main workspace.")
@@ -179,15 +177,14 @@ def render_ai_application(docx_files, *args, **kwargs):
                         st.error(f"Groq API Error: {str(e)}")
 
             # ──────────────────────────────────────────
-            # MODE 5: RISK ASSESSMENT (FIXED & LOGICALLY ALIGNED)
+            # MODE 5: RISK ASSESSMENT (SIMPLIFIED & CLEAN)
             # ──────────────────────────────────────────
             elif mode == "⚠️ Risk Assessment" and run_engine:
                 if not final_process_text:
-                    st.error("Please provide process data or select a valid document.")
+                    st.error("No text extracted from the document repository.")
                 else:
                     with st.spinner("Running AS9100 Risk Engine..."):
                         try:
-                            # Passes pre-sorted clean inputs safely without scope problems
                             result = assess_risk(final_process_text, final_context_text)
                             if result:
                                 st.markdown(result)
