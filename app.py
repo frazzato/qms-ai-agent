@@ -8,16 +8,16 @@ from ui.dashboard import render_dashboard
 from ui.chat import render_ai_application
 from ui.training import render_training_hub
 
-# 2. IMPORT CONFIG & YOUR ROBUST PARSING ENGINE DIRECTLY
+# 2. IMPORT CONFIG & YOUR REAL METADATA SCANNER
 from config.settings import DOCS_DIR
-from services.ai_service import scan_documents  # <-- CONNECTS DIRECTLY TO YOUR ENGINE!
+from services.documents import scan_documents  # <-- THE ONLY SCAN IMPORT WE NEED
 
 st.set_page_config(page_title="QMS System", layout="wide")
 
 if "active_tab" not in st.session_state:
     st.session_state.active_tab = "Dashboard"
 
-# Fetch perfectly extracted, metadata-parsed records directly from your pipeline
+# Fetch perfectly extracted, metadata-parsed records directly from your documents.py engine
 doc_data, available_files = scan_documents()
 
 # ─────────────────────────────────────
